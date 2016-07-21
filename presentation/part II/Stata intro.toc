@@ -1,0 +1,9 @@
+\beamer@endinputifotherversion {3.10pt}
+\select@language {english}
+\beamer@sectionintoc {1}{Loops}{3}{0}{1}
+\beamer@sectionintoc {2}{Using your results}{4}{0}{2}
+\beamer@sectionintoc {3}{``Pretty'' output and graphs}{6}{0}{3}
+\beamer@sectionintoc {4}{Make your own data}{8}{0}{4}
+\beamer@sectionintoc {5}{Packages}{9}{0}{5}
+\beamer@sectionintoc {6}{Programs and \texttt {.ado} files}{10}{0}{6}
+\beamer@sectionintoc {7}{Capita Selecta}{11}{0}{7}

@@ -1,0 +1,165 @@
+% plug ins: http://www.stata.com/plugins/index.html 
+% database: http://www.stata.com/support/faqs/data/plugin_database.html
+
+
+\documentclass[pdftex, compress]{beamer}
+
+\usepackage{%
+	marvosym,%
+	graphicx,%
+	hyperref,%
+	verbatim,%
+	fancyvrb,%
+}
+
+\usepackage[T1]{fontenc}
+\usepackage{fancyvrb}
+\usepackage[english]{babel}
+\usepackage[labelformat=empty, labelsep=none, justification=centering]{caption}
+
+\usetheme[secheader]{Boadilla}
+
+\mode<presentation>
+\setbeamercovered{transparent=30}
+%%%%
+\title{An introduction to Stata, part II}
+\subtitle{Advanced use and programming}
+\author{Matthijs~de~Zwaan}
+\institute{ACED}
+\date{December 3, 2010}
+%%%%
+\begin{document}
+%%%%
+\begin{frame}
+\titlepage
+\end{frame}
+%%%%
+\begin{frame}
+\tableofcontents
+\end{frame}
+%%%%
+\section{Loops}
+
+\begin{frame}[fragile]
+\frametitle{\texttt{foreach}, \texttt{forval} and \texttt{while}}
+	\begin{itemize}
+		\item \texttt{foreach\{\}}, \texttt{forval\{\}} and \texttt{while\{\}} allow you to repeat manipulations easily.
+		\item useful for data manipulation or doing the same analyses over different subsets of your data.  
+		\item For example, \\
+			\begin{Verbatim}
+				foreach i in 0 1	{
+					summarize wage if gender == `i'
+				}
+			\end{Verbatim}
+			summarizes the ``wage'' variable for men and women (presumably)
+		\item take care of the syntax; see the help files!
+	\end{itemize}
+\end{frame}
+
+\section{Using your results}
+
+\begin{frame}
+\frametitle{Macros, scalars and matrices}
+	\begin{itemize}
+		\item Macros can store a list of things (both text and number)
+		\begin{itemize}
+			\item can be used, for example, in a \texttt{foreach\{\}} loop
+		\end{itemize}
+		\item Scalars hold a single number
+		\begin{itemize}
+			\item can be used in further calculations; scalars are very precise!
+		\end{itemize}
+		\item Matrices hold arrays of scalars
+		\begin{itemize}
+			\item can be used in further calculations
+		\end{itemize}		
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Access to results}
+	\begin{itemize}
+		\item Stata stores results of commands in its memory
+		\item you can access those results for further calculation/manipulation
+		\item useful if you want to verify something, if or if the statistic you want is not directly shown and you need to calculate it from the available information.
+		\item at the bottom of any help file, there is a list of things that are accessible
+		\item see \texttt{help return}, and links therein
+		\item Results are returned as matrices, scalars or macros
+	\end{itemize}
+\end{frame}
+
+\section{``Pretty'' output and graphs}
+
+\begin{frame}
+\frametitle{Outputting your output}
+	\begin{itemize}
+		\item export your results to Excel/Word/\LaTeX
+		\item Useful functions and SSC--packages:
+		\begin{itemize}
+			\item \texttt{estimate} functions --- see \texttt{help estimates}
+			\item outreg2 --- SSC
+			\item estout, esttab, estpost, eststo --- SSC
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Publication quality graphs}
+	\begin{itemize}
+		\item You can customize Stata's \texttt{graph twoway} commands in \alert{many} ways
+		\item Multiple axes, legend, labeling of data points, colours, add text and notes, etc 
+		\item see \texttt{help graph twoway} and \texttt{help twoway options}
+		\item see Mitchell (2004), \textit{A visual guide to Stata graphics}.
+	\end{itemize}
+\end{frame}
+
+\section{Make your own data}
+
+\begin{frame}
+\frametitle{Random number generation}
+You can use Stata to generate (pseudo--)random number for a number of distributions
+	\begin{itemize}
+		\item You know the \alert{true} coefficients!
+		\item You need to use \texttt{set obs \#} to define the number of observations your data will hold
+		\item use \texttt{set seed} to get the same ``random'' number each time: for reproducability
+		\item useful for testing, teaching
+		\item see \texttt{help random number functions}
+	\end{itemize}
+\end{frame}
+
+\section{Packages}
+
+\begin{frame}
+\frametitle{Don't invent the wheel again!}
+	\begin{itemize}
+		\item There are many user-written packages available
+		\item Statistical Software Components (SSC) archive or \url{http://www.stata.com/stb/}: triple--checked by high quality Stata users, with good quality help files
+		\item \alert{DO NOT install manually!}
+		\item use the \texttt{findit} command to search for a package and install it
+		\item or use \texttt{ssc install <\textsl{package name}>} to install
+		\item see also \texttt{help ssc}
+	\end{itemize}
+\end{frame}
+
+\section{Programs and \texttt{.ado} files}
+
+\begin{frame}
+\frametitle{Programs}
+	\begin{itemize}
+		\item If you use sequence of commands regularly, you can make a program, which you can then easily use again.
+		\item If you save your program as an \texttt{.ado} file, you can then call the program any time, as you would any Stata command
+		\item type \texttt{sysdir} to see where your \texttt{.ado}-files are saved. 
+		\item or install \texttt{adoedit} from SSC.
+		\item see \texttt{help program} for syntax. Have a look at any of the \texttt{.ado}-files in your directory for inspiration!
+	\end{itemize}
+\end{frame}
+
+\section{Capita Selecta}
+
+\begin{frame}
+\frametitle{Capita Selecta}
+\begin{itemize}
+	\item Linking with data base programs: see \texttt{help odbc} and \url{http://www.stata.com/support/faqs/data/plugin_database.html}
+\end{itemize}
+\end{frame}
+\end{document}

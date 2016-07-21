@@ -1,0 +1,136 @@
+\documentclass[pdftex, compress]{beamer}
+
+\usepackage{%
+	marvosym,%
+	graphicx,%
+	hyperref,%
+	verbatim,%
+}
+
+\usepackage[T1]{fontenc}
+\usepackage{fancyvrb}
+\usepackage[english]{babel}
+\usepackage[labelformat=empty, labelsep=none, justification=centering]{caption}
+
+\usetheme{Boadilla}
+
+\mode<presentation>
+\setbeamercovered{transparent=30}
+%%%%
+\title{An introduction to Stata}
+\author{Matthijs~de~Zwaan}
+\institute{\,}
+\date{November 19, 2010}
+%%%%
+\begin{document}
+%%%%
+\begin{frame}
+\titlepage
+\end{frame}
+%%%%
+\section{Introduction}
+
+\begin{frame}
+\frametitle{Introduction}
+\begin{itemize}
+	\item Stata has broad statistical and econometric capabilities
+	\begin{itemize}
+		\item Linear models; ANOVA
+		\item Limited dependent variables (logit, tobit etc)
+		\item Panel data and time series
+		\item Survival analysis
+		\item etc\dots
+	\end{itemize}
+	\item Good graphical capabilities (publication quality)
+	\item Data Management
+\end{itemize}
+\end{frame}
+%%%%
+\section{Getting started}
+\begin{frame}
+\frametitle{Getting started}
+%\insertnavigation
+\begin{itemize}
+	\item Point--and-Click via the menu
+	\item Type directly into command--box
+	\item (Better) alternative: Stata \texttt{.do} files
+	\begin{itemize}
+		\item Organise your do--files
+		\item \alert{Reproduce} what you've done
+		\item Easily checked and changed
+		\item You can more easily split your work into blocks: one do for cleaning data, one for generating variables, one for analysis etc
+	\end{itemize}
+	\item[] $\Rightarrow$ \texttt{doedit} opens a new do--file	
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{The \texttt{.do} file}
+The do file\dots
+\begin{itemize}
+	\item \dots works as if you would type each line into the command box
+	\item \dots can be run line by line, or all at once.
+\end{itemize}
+\vfill
+\alert{Describe your do file!} 
+\begin{itemize}
+\item[] What does (should\dots) it do,
+\item[] when was it made, 
+\item[] by whom, 
+\item[] why?
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{The structure of Stata commands}
+A Stata command generally looks like:
+
+\begin{Verbatim}
+[(optional by, xi, etc)[, options]:] 
+command (and what to do the command on) 
+[restrictions: if, in] 
+[, options]
+\end{Verbatim}
+Example:
+\begin{verbatim}
+by firm, sort: reg wage educ tenure if male==0, vce(robust)
+\end{verbatim}
+
+$\Rightarrow$ \alert{Most commands (and variables) can be abbreviated:}\\handy but dangerous! Use \texttt{set varabbrev off}.
+\end{frame}
+
+\begin{frame}
+\frametitle{Notes on notation}
+\begin{itemize}
+	\item Lists of variables (\texttt{varlist}s)
+	\begin{itemize}
+		\item wildcard *: \texttt{var*} gives all variables starting with \texttt{var} (including \texttt{var})
+		\item single character wildcard ?: \texttt{var?} gives all four character variables starting with var (\emph{excluding} \texttt{var}!)
+		\item Can be used in the middle of a name
+		\item var1-var6 gives all variables from var1 to var6. \alert{NB!} depends on sort order of your data set!
+	\end{itemize}	
+		\item Comments (generally within do-files)
+	\begin{itemize}
+		\item asterisk * at the beginning of a line
+		\item // at the end of a line
+		\item anything between /* comment */
+	\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Need help?}
+	\begin{itemize}
+		\item Check the help file! \\ (\texttt{help [command]})
+		\item Check the manuals!
+		\item Check the internet!\\\url{http://www.ats.ucla.edu/stat/stata/} is a good resource. See also the Stata list.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Stata at work\dots}
+\Huge Let's get to work!
+\end{frame}
+
+%%%%
+\end{document}

@@ -1,0 +1,2741 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}intro
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/Stata intro/presentation/part II/introduction.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 14:13:46
+{txt}
+{com}. /**********************
+> Stata Introduction Part II
+> December 9, 2011
+> Author: Matthijs de Zwaan
+> **********************/
+. 
+. /* Setting up an example panel data set.
+> Use "set seed #" if you want to get the same
+> `random' numbers each time */
+. * make a data of 500 obs
+. clear
+{txt}
+{com}. set obs 500
+{txt}obs was 0, now 500
+
+{com}. * make id-var
+. egen id = seq(), from(1) to(50) block(10)
+{txt}
+{com}. * make time-var
+. bysort id: gen t = _n
+{txt}
+{com}. * set as panel data 
+. xtset id t, yearly delta(1)
+{res}{txt}{col 8}panel variable:  {res}id (strongly balanced)
+{txt}{col 9}time variable:  {res}{col 25}t, 1 to 10
+{txt}{col 17}delta:  {res}1 year
+{txt}
+{com}. * make a regressor; uniform dist over [0,3)
+. generate x = 3*uniform()
+{txt}
+{com}. * making fixed effects
+. gen ci =  sqrt(id)
+{txt}
+{com}. * generate errors ~ N with mean 0, sd 1
+. gen e = rnormal()
+{txt}
+{com}. summ e
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 11}e {c |}{res}       500    -.042514    .9913557  -3.232499   2.792773
+{txt}
+{com}. return list
+
+{txt}scalars:
+                  r(N) =  {res}500
+              {txt}r(sum_w) =  {res}500
+               {txt}r(mean) =  {res}-.0425140382302925
+                {txt}r(Var) =  {res}.9827861349632042
+                 {txt}r(sd) =  {res}.9913557055684928
+                {txt}r(min) =  {res}-3.232499122619629
+                {txt}r(max) =  {res}2.792772531509399
+                {txt}r(sum) =  {res}-21.25701911514625
+{txt}
+{com}. replace e = (e - r(mean))/(r(sd)) // make sure that mean = 0 and sd = 1
+{txt}(500 real changes made)
+
+{com}. summ e
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 11}e {c |}{res}       500    1.24e-09           1  -3.217801   2.860009
+{txt}
+{com}. * generate dependent variable: constant = 1 + x + fixed effects
+. * Of course, we would nomally observe only y and x!
+. gen y = 1 + x + ci + e
+{txt}
+{com}. 
+. summ
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 10}id {c |}{res}       500        25.5    14.44532          1         50
+{txt}{space 11}t {c |}{res}       500         5.5    2.875158          1         10
+{txt}{space 11}x {c |}{res}       500    1.520176    .8618031   .0031457   2.994475
+{txt}{space 10}ci {c |}{res}       500    4.780716    1.627899          1   7.071068
+{txt}{space 11}e {c |}{res}       500    1.24e-09           1  -3.217801   2.860009
+{txt}{hline 13}{c +}{hline 56}
+{space 11}y {c |}{res}       500    7.300892    2.001458   1.669438   11.83832
+{txt}
+{com}. xtdes
+
+      {txt}id:  {res}1{txt}, {res}2{txt}, ..., {res}50                                     {txt}n ={res}         50
+       {txt}t:  {res}1, 2, ..., 10                                     {txt}T ={res}         10
+           {txt}Delta(t) = {res}1 year
+           {txt}Span(t)  = {res}10 periods
+           {txt}(id*t uniquely identifies each observation)
+
+Distribution of T_i:   min      5%     25%       50%       75%     95%     max
+                    {res}    10      10      10        10        10      10      10
+
+{txt}{col 6}Freq.  Percent    Cum. {c |}  Pattern
+ {hline 27}{c +}{c -}{c -}{hline 10}
+{res}       50    100.00  100.00{txt} {c |}  {res}1111111111
+{txt} {hline 27}{c +}{c -}{c -}{hline 10}
+{res}       50    100.00        {txt} {c |}  {res}XXXXXXXXXX
+{txt}
+{com}. pwcorr, star(0.05)
+
+             {txt}{c |}       id        t        x       ci        e        y
+{hline 13}{c +}{hline 54}
+          id {c |} {res}  1.0000 
+           {txt}t {c |} {res}  0.0000   1.0000 
+           {txt}x {c |} {res} -0.0695   0.0788   1.0000 
+          {txt}ci {c |} {res}  0.9828*  0.0000  -0.0719   1.0000 
+           {txt}e {c |} {res} -0.0771  -0.0534   0.0183  -0.0666   1.0000 
+           {txt}y {c |} {res}  0.7309*  0.0073   0.3812*  0.7491*  0.4534*  1.0000 
+{txt}
+{com}. 
+. * Pooled OLS
+. regress y x
+
+      {txt}Source {c |}       SS       df       MS              Number of obs ={res}     500
+{txt}{hline 13}{char +}{hline 30}           F(  1,   498) ={res}   84.69
+    {txt}   Model {char |} {res}  290.53198     1   290.53198           {txt}Prob > F      = {res} 0.0000
+    {txt}Residual {char |} {res} 1708.37871   498  3.43047934           {txt}R-squared     = {res} 0.1453
+{txt}{hline 13}{char +}{hline 30}           Adj R-squared = {res} 0.1436
+    {txt}   Total {char |} {res} 1998.91069   499  4.00583304           {txt}Root MSE      = {res} 1.8522
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 1}           y{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      t{col 46}   P>|t|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 11}x {c |}{col 14}{res}{space 2} .8853982{col 26}{space 2} .0962097{col 37}{space 1}    9.20{col 46}{space 3}0.000{col 54}{space 4} .6963712{col 67}{space 3} 1.074425
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} 5.954931{col 26}{space 2} .1680824{col 37}{space 1}   35.43{col 46}{space 3}0.000{col 54}{space 4} 5.624693{col 67}{space 3} 6.285169
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. regress y x, cluster(id)
+
+{txt}Linear regression                                      Number of obs ={res}     500
+                                                       {txt}F(  1,    49) ={res}   74.03
+                                                       {txt}Prob > F      = {res} 0.0000
+                                                       {txt}R-squared     = {res} 0.1453
+                                                       {txt}Root MSE      = {res} 1.8522
+
+{txt}{ralign 78:(Std. Err. adjusted for {res:50} clusters in id)}
+{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}           y{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      t{col 46}   P>|t|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 11}x {c |}{col 14}{res}{space 2} .8853982{col 26}{space 2} .1029041{col 37}{space 1}    8.60{col 46}{space 3}0.000{col 54}{space 4} .6786046{col 67}{space 3} 1.092192
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} 5.954931{col 26}{space 2} .2593963{col 37}{space 1}   22.96{col 46}{space 3}0.000{col 54}{space 4} 5.433655{col 67}{space 3} 6.476207
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. * Results are okay; why are the c_i not a problem?
+. 
+. * create new data; now, c_i are correlated with X
+. cap drop x
+{txt}
+{com}. gen x = .5*rnormal() + .2*ln(id) // remember that ci = id, so now both depend on id
+{txt}
+{com}. 
+. cap drop y
+{txt}
+{com}. gen y = 1 + x + ci + e
+{txt}
+{com}. 
+. summ
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 10}id {c |}{res}       500        25.5    14.44532          1         50
+{txt}{space 11}t {c |}{res}       500         5.5    2.875158          1         10
+{txt}{space 10}ci {c |}{res}       500    4.780716    1.627899          1   7.071068
+{txt}{space 11}e {c |}{res}       500    1.24e-09           1  -3.217801   2.860009
+{txt}{space 11}x {c |}{res}       500     .630973    .5173803  -1.112669   2.021981
+{txt}{hline 13}{c +}{hline 56}
+{space 11}y {c |}{res}       500    6.411689    2.052458   1.251554   11.15281
+{txt}
+{com}. pwcorr, star(0.05)
+
+             {txt}{c |}       id        t       ci        e        x        y
+{hline 13}{c +}{hline 54}
+          id {c |} {res}  1.0000 
+           {txt}t {c |} {res}  0.0000   1.0000 
+          {txt}ci {c |} {res}  0.9828*  0.0000   1.0000 
+           {txt}e {c |} {res} -0.0771  -0.0534  -0.0666   1.0000 
+           {txt}x {c |} {res}  0.3270* -0.0547   0.3485* -0.0729   1.0000 
+           {txt}y {c |} {res}  0.8244* -0.0398   0.8486*  0.4160*  0.4929*  1.0000 
+{txt}
+{com}. 
+. * pooled OLS
+. regress y x
+
+      {txt}Source {c |}       SS       df       MS              Number of obs ={res}     500
+{txt}{hline 13}{char +}{hline 30}           F(  1,   498) ={res}  159.85
+    {txt}   Model {char |} {res} 510.783563     1  510.783563           {txt}Prob > F      = {res} 0.0000
+    {txt}Residual {char |} {res} 1591.29561   498   3.1953727           {txt}R-squared     = {res} 0.2430
+{txt}{hline 13}{char +}{hline 30}           Adj R-squared = {res} 0.2415
+    {txt}   Total {char |} {res} 2102.07917   499  4.21258351           {txt}Root MSE      = {res} 1.7876
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 1}           y{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      t{col 46}   P>|t|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 11}x {c |}{col 14}{res}{space 2} 1.955502{col 26}{space 2}  .154668{col 37}{space 1}   12.64{col 46}{space 3}0.000{col 54}{space 4}  1.65162{col 67}{space 3} 2.259384
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}  5.17782{col 26}{space 2} .1261539{col 37}{space 1}   41.04{col 46}{space 3}0.000{col 54}{space 4}  4.92996{col 67}{space 3}  5.42568
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. scatter y x
+{res}{txt}
+{com}. * Not even close to real model!
+. 
+. cap drop x
+{txt}
+{com}. gen x = .5*rnormal() - .2*ln(id) // negative correlation
+{txt}
+{com}. 
+. cap drop y
+{txt}
+{com}. gen y = 1 + x + ci + e
+{txt}
+{com}. 
+. summ
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 10}id {c |}{res}       500        25.5    14.44532          1         50
+{txt}{space 11}t {c |}{res}       500         5.5    2.875158          1         10
+{txt}{space 10}ci {c |}{res}       500    4.780716    1.627899          1   7.071068
+{txt}{space 11}e {c |}{res}       500    1.24e-09           1  -3.217801   2.860009
+{txt}{space 11}x {c |}{res}       500   -.5796385    .5245421  -2.327051   1.096987
+{txt}{hline 13}{c +}{hline 56}
+{space 11}y {c |}{res}       500    5.201078    1.787948   -.185643      9.874
+{txt}
+{com}. pwcorr, star(0.05)
+
+             {txt}{c |}       id        t       ci        e        x        y
+{hline 13}{c +}{hline 54}
+          id {c |} {res}  1.0000 
+           {txt}t {c |} {res}  0.0000   1.0000 
+          {txt}ci {c |} {res}  0.9828*  0.0000   1.0000 
+           {txt}e {c |} {res} -0.0771  -0.0534  -0.0666   1.0000 
+           {txt}x {c |} {res} -0.3074*  0.0545  -0.3405*  0.0664   1.0000 
+           {txt}y {c |} {res}  0.7616* -0.0139   0.7734*  0.5182*  0.0205   1.0000 
+{txt}
+{com}. 
+. regress y x
+
+      {txt}Source {c |}       SS       df       MS              Number of obs ={res}     500
+{txt}{hline 13}{char +}{hline 30}           F(  1,   498) ={res}    0.21
+    {txt}   Model {char |} {res} .673554878     1  .673554878           {txt}Prob > F      = {res} 0.6467
+    {txt}Residual {char |} {res} 1594.50848   498  3.20182426           {txt}R-squared     = {res} 0.0004
+{txt}{hline 13}{char +}{hline 30}           Adj R-squared = {res}-0.0016
+    {txt}   Total {char |} {res} 1595.18203   499  3.19675758           {txt}Root MSE      = {res} 1.7894
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 1}           y{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      t{col 46}   P>|t|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 11}x {c |}{col 14}{res}{space 2} .0700416{col 26}{space 2} .1527102{col 37}{space 1}    0.46{col 46}{space 3}0.647{col 54}{space 4}-.2299942{col 67}{space 3} .3700773
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} 5.241676{col 26}{space 2} .1193267{col 37}{space 1}   43.93{col 46}{space 3}0.000{col 54}{space 4} 5.007231{col 67}{space 3} 5.476122
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. scatter y x
+{res}{txt}
+{com}. 
+. * Even worse! 
+. * Let's run the model for each panel.
+. gen bhat = .
+{txt}(500 missing values generated)
+
+{com}. summ id
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 10}id {c |}{res}       500        25.5    14.44532          1         50
+{txt}
+{com}. return list
+
+{txt}scalars:
+                  r(N) =  {res}500
+              {txt}r(sum_w) =  {res}500
+               {txt}r(mean) =  {res}25.5
+                {txt}r(Var) =  {res}208.6673346693387
+                 {txt}r(sd) =  {res}14.44532224179643
+                {txt}r(min) =  {res}1
+                {txt}r(max) =  {res}50
+                {txt}r(sum) =  {res}12750
+{txt}
+{com}. set trace on
+{txt}
+{com}. set tracedepth 1
+{txt}
+{com}. forval i = 1/`r(max)'   {c -(} // or use the levelsof command in a smart wayÉ
+{txt}  2{com}. cap set trace off
+{txt}  3{com}.         qui reg y x if id == `i'
+{txt}  4{com}.         replace bhat = _b[x] if id == `i'
+{txt}  5{com}. {c )-}
+{txt}- forval i = 1/`r(max)' {c -(}
+= forval i = 1/50 {c -(}
+- cap set trace off
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+(10 real changes made)
+
+{com}. summ bhat
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 8}bhat {c |}{res}       500    1.099632    .8298258  -.9254161   3.604791
+{txt}
+{com}. * coefficient is okay, but only 10 obs per panel -> some kind of pooling would be nice for efficiency
+. * A graph might clarify the problem
+. scatter y x, mlab(id)
+{res}{txt}
+{com}. scatter y x if id <= 5, mlab(id) msymbol(i) mlabpos(0)
+{res}{txt}
+{com}. #delimit;
+{txt}delimiter now ;
+{com}. graph twoway // see help graph twoway for the many options!
+>         scatter y x, legend(off) scheme(sj) ms(+)
+> ||      lfit y x, lcolor(red) lwidth(1) lpattern(solid)
+> ||      scatter y x if id == 1, mcolor(red) msymbol(d) msize(large)
+> ||      lfit y x if id == 1, lcolor(red) lpattern(solid)
+> ||      scatter y x if id == 11, mcolor(blue) msymbol(d) msize(large)
+> ||      lfit y x if id == 11, lcolor(blue) lpattern(solid)
+> ||      scatter y x if id == 21, mcolor(green) msymbol(d) msize(large)
+> ||      lfit y x if id == 21, lcolor(green) lpattern(solid)
+> ||      scatter y x if id == 31, mcolor(yellow) msymbol(d) msize(large)
+> ||      lfit y x if id == 31, lcolor(yellow) lpattern(solid)
+> ||      scatter y x if id == 41, mcolor(gray) msymbol(d) msize(large)
+> ||      lfit y x if id == 41, lcolor(gray) lpattern(solid)
+> ;
+{res}{txt}
+{com}. #delimit cr
+{txt}delimiter now cr
+{com}. 
+. * What to do!? Fixed effects panel estimation!
+. xtset
+{res}{txt}{col 8}panel variable:  {res}id (strongly balanced)
+{txt}{col 9}time variable:  {res}{col 25}t, 1 to 10
+{txt}{col 17}delta:  {res}1 year
+{txt}
+{com}. * quick look
+. preserve
+{txt}
+{com}. xtdata, fe clear
+{txt}
+{com}. scatter y x
+{res}{txt}
+{com}. reg y x
+
+      {txt}Source {c |}       SS       df       MS              Number of obs ={res}     500
+{txt}{hline 13}{char +}{hline 30}           F(  1,   498) ={res}  142.97
+    {txt}   Model {char |} {res} 130.540161     1  130.540161           {txt}Prob > F      = {res} 0.0000
+    {txt}Residual {char |} {res} 454.705732   498  .913063719           {txt}R-squared     = {res} 0.2231
+{txt}{hline 13}{char +}{hline 30}           Adj R-squared = {res} 0.2215
+    {txt}   Total {char |} {res} 585.245893   499  1.17283746           {txt}Root MSE      = {res} .95554
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 1}           y{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      t{col 46}   P>|t|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 11}x {c |}{col 14}{res}{space 2} 1.106274{col 26}{space 2} .0925212{col 37}{space 1}   11.96{col 46}{space 3}0.000{col 54}{space 4} .9244938{col 67}{space 3} 1.288054
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} 5.842316{col 26}{space 2} .0685724{col 37}{space 1}   85.20{col 46}{space 3}0.000{col 54}{space 4} 5.707589{col 67}{space 3} 5.977043
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. restore
+{txt}
+{com}. xtreg y x, fe vce(robust)
+
+{txt}Fixed-effects (within) regression               Number of obs      = {res}      500
+{txt}Group variable: {res}id                              {txt}Number of groups   = {res}       50
+
+{txt}R-sq:  within  = {res}0.2231                         {txt}Obs per group: min = {res}       10
+{txt}       between = {res}0.3797                                        {txt}avg = {res}     10.0
+{txt}       overall = {res}0.0004                                        {txt}max = {res}       10
+
+                                                {txt}F({res}1{txt},{res}49{txt})            = {res}   131.54
+{txt}corr(u_i, Xb)  = {res}-0.3384                        {txt}Prob > F           =    {res}0.0000
+
+{txt}{ralign 78:(Std. Err. adjusted for {res:50} clusters in id)}
+{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}           y{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      t{col 46}   P>|t|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 11}x {c |}{col 14}{res}{space 2} 1.106274{col 26}{space 2} .0964553{col 37}{space 1}   11.47{col 46}{space 3}0.000{col 54}{space 4} .9124397{col 67}{space 3} 1.300108
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} 5.842316{col 26}{space 2} .0559092{col 37}{space 1}  104.50{col 46}{space 3}0.000{col 54}{space 4} 5.729963{col 67}{space 3}  5.95467
+{txt}{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+     sigma_u {c |} {res} 1.6208018
+{txt}     sigma_e {c |} {res} 1.0063338
+{txt}         rho {c |} {res} .72176114{txt}   (fraction of variance due to u_i)
+{hline 13}{c BT}{hline 64}
+
+{com}. ereturn list
+
+{txt}scalars:
+               e(rank) =  {res}1
+                {txt}e(rss) =  {res}454.7057322640331
+               {txt}e(df_m) =  {res}50
+            {txt}e(N_clust) =  {res}50
+               {txt}e(df_r) =  {res}49
+                 {txt}e(r2) =  {res}.2230518186985835
+               {txt}e(rmse) =  {res}.9555436773929745
+                {txt}e(mss) =  {res}130.5401608435155
+               {txt}e(r2_a) =  {res}.2214916817883397
+                 {txt}e(ll) =  {res}-685.7298588583128
+               {txt}e(ll_0) =  {res}-748.8252642508586
+                {txt}e(tss) =  {res}1595.182034682214
+                  {txt}e(N) =  {res}500
+               {txt}e(df_b) =  {res}1
+               {txt}e(r2_w) =  {res}.2230518186985835
+               {txt}e(df_a) =  {res}49
+                  {txt}e(F) =  {res}131.5447063727301
+               {txt}e(Tbar) =  {res}10
+               {txt}e(Tcon) =  {res}1
+              {txt}e(g_min) =  {res}10
+                {txt}e(rho) =  {res}.7217611432923924
+              {txt}e(sigma) =  {res}1.907801359923937
+            {txt}e(sigma_e) =  {res}1.006333763838126
+               {txt}e(r2_b) =  {res}.3797033964200963
+               {txt}e(r2_o) =  {res}.0004222432693892
+               {txt}e(corr) =  {res}-.33842292691035
+            {txt}e(sigma_u) =  {res}1.62080177217543
+                 {txt}e(ui) =  {res}1.62080177217543
+                {txt}e(N_g) =  {res}50
+              {txt}e(g_max) =  {res}10
+              {txt}e(g_avg) =  {res}10
+
+{txt}macros:
+            e(cmdline) : "{res}xtreg y x, fe vce(robust){txt}"
+                e(cmd) : "{res}xtreg{txt}"
+       e(marginsnotok) : "{res}E U UE SCore STDP XBU{txt}"
+            e(predict) : "{res}xtrefe_p{txt}"
+              e(model) : "{res}fe{txt}"
+             e(depvar) : "{res}y{txt}"
+               e(ivar) : "{res}id{txt}"
+                e(vce) : "{res}cluster{txt}"
+           e(clustvar) : "{res}id{txt}"
+            e(vcetype) : "{res}Robust{txt}"
+         e(properties) : "{res}b V{txt}"
+
+matrices:
+                  e(b) : {res} 1 x 2
+                  {txt}e(V) : {res} 2 x 2
+
+{txt}functions:
+             e(sample)   
+
+{com}. matrix B = e(b)
+{txt}
+{com}. matrix list B
+
+{txt}B[1,2]
+            x      _cons
+y1  {res}1.1062738  5.8423164
+{txt}
+{com}. matrix V = e(V)
+{txt}
+{com}. matrix list V
+
+{txt}symmetric V[2,2]
+               x      _cons
+    x  {res}.00930362
+{txt}_cons  {res}.00539273  .00312584
+{txt}
+{com}. * So what are my p-values?
+. scalar b = _b[x] // get the coeff and the se of x
+{txt}
+{com}. scalar se = _se[x] // we could also have gotten these values from the matrices B and V
+{txt}
+{com}. scalar t = b/se
+{txt}
+{com}. di t
+{res}1
+{txt}
+{com}. scalar p = ttail(e(df_r), abs(scalar(t))) // ``look up'' in the t distribution
+{txt}
+{com}. di 2*p
+{res}1.753e-15
+{txt}
+{com}. scalar lb = b - invttail(e(df_r),0.025)*se
+{txt}
+{com}. scalar ub = b + invttail(e(df_r),0.025)*se
+{txt}
+{com}. di "95% CI for b[x]: " %6.5f _col(20)lb %6.5f _col(30)ub // see help format
+{res}95% CI for b[x]: {col 20}0.91244{col 30}1.30011
+{txt}
+{com}. 
+. 
+. /* A new example: probit models
+> Dependent variable is 0/1, eg person is unemployed yes/no,
+> or, student passes test yes/no. 
+> We have an underlying ``latent variable'' y* that is continuous.
+> Y* is unobserved by the researcher!
+> If y* <= 0, y = 0; if y* > 0, y = 1
+>  */
+. 
+. clear
+{txt}
+{com}. set obs 500
+{txt}obs was 0, now 500
+
+{com}. gen x1 = rnormal(1.3)
+{txt}
+{com}. gen x2 = runiform()
+{txt}
+{com}. gen e = rnormal()
+{txt}
+{com}. qui summ e
+{txt}
+{com}. replace e = (e - r(mean))/r(sd)
+{txt}(500 real changes made)
+
+{com}. gen ystar = -1 + x1 + x2 + e
+{txt}
+{com}. gen y = (ystar > 0)
+{txt}
+{com}. summ
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 10}x1 {c |}{res}       500    1.388348    .9854614  -2.231247   4.304099
+{txt}{space 10}x2 {c |}{res}       500    .4961039      .29109   .0001017   .9994489
+{txt}{space 11}e {c |}{res}       500    1.38e-09           1    -2.6972   2.607448
+{txt}{space 7}ystar {c |}{res}       500    .8844516    1.377015  -2.812755   5.299572
+{txt}{space 11}y {c |}{res}       500         .73    .4444041          0          1
+{txt}
+{com}. pwcorr
+
+             {txt}{c |}       x1       x2        e    ystar        y
+{hline 13}{c +}{hline 45}
+          x1 {c |} {res}  1.0000 
+          {txt}x2 {c |} {res}  0.0033   1.0000 
+           {txt}e {c |} {res} -0.0618  -0.0684   1.0000 
+       {txt}ystar {c |} {res}  0.6715   0.1641   0.6675   1.0000 
+           {txt}y {c |} {res}  0.5030   0.1156   0.4841   0.7359   1.0000 
+{txt}
+{com}. 
+. * Linear probability model; sometimes works okayÉ
+. reg ystar x1 x2
+
+      {txt}Source {c |}       SS       df       MS              Number of obs ={res}     500
+{txt}{hline 13}{char +}{hline 30}           F(  2,   497) ={res}  226.72
+    {txt}   Model {char |} {res} 451.413536     2  225.706768           {txt}Prob > F      = {res} 0.0000
+    {txt}Residual {char |} {res} 494.775084   497  .995523309           {txt}R-squared     = {res} 0.4771
+{txt}{hline 13}{char +}{hline 30}           Adj R-squared = {res} 0.4750
+    {txt}   Total {char |} {res} 946.188621   499  1.89616958           {txt}Root MSE      = {res} .99776
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 1}       ystar{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      t{col 46}   P>|t|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 10}x1 {c |}{col 14}{res}{space 2}  .937532{col 26}{space 2}  .045325{col 37}{space 1}   20.68{col 46}{space 3}0.000{col 54}{space 4} .8484797{col 67}{space 3} 1.026584
+{txt}{space 10}x2 {c |}{col 14}{res}{space 2} .7657522{col 26}{space 2} .1534442{col 37}{space 1}    4.99{col 46}{space 3}0.000{col 54}{space 4} .4642729{col 67}{space 3} 1.067231
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.7970614{col 26}{space 2} .1082321{col 37}{space 1}   -7.36{col 46}{space 3}0.000{col 54}{space 4} -1.00971{col 67}{space 3}-.5844125
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. estimates store M1
+{txt}
+{com}. reg y x1 x2, robust
+
+{txt}Linear regression                                      Number of obs ={res}     500
+                                                       {txt}F(  2,   497) ={res}  123.83
+                                                       {txt}Prob > F      = {res} 0.0000
+                                                       {txt}R-squared     = {res} 0.2660
+                                                       {txt}Root MSE      = {res} .38151
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}           y{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      t{col 46}   P>|t|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 10}x1 {c |}{col 14}{res}{space 2} .2266553{col 26}{space 2}  .014885{col 37}{space 1}   15.23{col 46}{space 3}0.000{col 54}{space 4}   .19741{col 67}{space 3} .2559006
+{txt}{space 10}x2 {c |}{col 14}{res}{space 2} .1739909{col 26}{space 2} .0584856{col 37}{space 1}    2.97{col 46}{space 3}0.003{col 54}{space 4} .0590815{col 67}{space 3} .2889003
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} .3290061{col 26}{space 2} .0438194{col 37}{space 1}    7.51{col 46}{space 3}0.000{col 54}{space 4} .2429121{col 67}{space 3} .4151001
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. est sto linprob
+{txt}
+{com}. * Ébut not here
+. est table M1 linprob
+{res}
+{txt}{hline 12}{c -}{c TT}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}
+{ralign 12:Variable} {c |} {center 10:M1} {space 1} {center 10:linprob} {space 1}
+{hline 12}{c -}{c +}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}
+{res}{txt}{space 10}x1 {c |}{res} {ralign 10:.93753198}{txt} {space 1}{res} {ralign 10:.2266553}{txt} {space 1}
+{res}{txt}{space 10}x2 {c |}{res} {ralign 10:.76575217}{txt} {space 1}{res} {ralign 10:.17399088}{txt} {space 1}
+{res}{txt}{space 7}_cons {c |}{res} {ralign 10:-.79706141}{txt} {space 1}{res} {ralign 10:.32900608}{txt} {space 1}
+{hline 12}{c -}{c BT}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}
+
+{com}. 
+. * Probit model
+. probit y x1 x2
+
+{txt}Iteration 0:   log likelihood = {res}-291.62942
+{txt}Iteration 1:   log likelihood = {res}-219.48503
+{txt}Iteration 2:   log likelihood = {res}-213.67475
+{txt}Iteration 3:   log likelihood = {res}-213.51946
+{txt}Iteration 4:   log likelihood = {res} -213.5193
+
+{txt}Probit regression                                 Number of obs   = {res}       500
+                                                  {txt}LR chi2({res}2{txt})      = {res}    156.22
+                                                  {txt}Prob > chi2     = {res}    0.0000
+{txt}Log likelihood = {res} -213.5193                       {txt}Pseudo R2       = {res}    0.2678
+
+{txt}{hline 13}{c TT}{hline 64}
+           y {c |}      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+{hline 13}{c +}{hline 64}
+          x1 {c |}  {res} .9422982   .0921867    10.22   0.000     .7616155    1.122981
+          {txt}x2 {c |}  {res} .7545344   .2437788     3.10   0.002     .2767368    1.232332
+       {txt}_cons {c |}  {res}-.8441415   .1738432    -4.86   0.000    -1.184868    -.503415
+{txt}{hline 13}{c BT}{hline 64}
+
+{com}. est sto probit
+{txt}
+{com}. * logit model
+. logit y x1 x2
+
+{txt}Iteration 0:   log likelihood = {res}-291.62942
+{txt}Iteration 1:   log likelihood = {res}-221.42755
+{txt}Iteration 2:   log likelihood = {res}-214.79304
+{txt}Iteration 3:   log likelihood = {res}-214.47457
+{txt}Iteration 4:   log likelihood = {res}-214.47339
+
+{txt}Logistic regression                               Number of obs   = {res}       500
+                                                  {txt}LR chi2({res}2{txt})      = {res}    154.31
+                                                  {txt}Prob > chi2     = {res}    0.0000
+{txt}Log likelihood = {res}-214.47339                       {txt}Pseudo R2       = {res}    0.2646
+
+{txt}{hline 13}{c TT}{hline 64}
+           y {c |}      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+{hline 13}{c +}{hline 64}
+          x1 {c |}  {res} 1.608995   .1687473     9.53   0.000     1.278256    1.939733
+          {txt}x2 {c |}  {res} 1.264556   .4253538     2.97   0.003      .430878    2.098234
+       {txt}_cons {c |}  {res} -1.43312   .3014325    -4.75   0.000    -2.023917   -.8423233
+{txt}{hline 13}{c BT}{hline 64}
+
+{com}. est sto logit
+{txt}
+{com}. est table linprob probit logit
+{res}
+{txt}{hline 12}{c -}{c TT}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}
+{ralign 12:Variable} {c |} {center 10:linprob} {space 1} {center 10:probit} {space 1} {center 10:logit} {space 1}
+{hline 12}{c -}{c +}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}
+{res}{txt}{space 10}x1 {c |}{res} {ralign 10:.2266553}{txt} {space 1}{res} {ralign 10:.94229818}{txt} {space 1}{res} {ralign 10:1.6089948}{txt} {space 1}
+{res}{txt}{space 10}x2 {c |}{res} {ralign 10:.17399088}{txt} {space 1}{res} {ralign 10:.75453442}{txt} {space 1}{res} {ralign 10:1.2645561}{txt} {space 1}
+{res}{txt}{space 7}_cons {c |}{res} {ralign 10:.32900608}{txt} {space 1}{res} {ralign 10:-.84414149}{txt} {space 1}{res} {ralign 10:-1.4331202}{txt} {space 1}
+{hline 12}{c -}{c BT}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}{c -}{hline 10}{c -}{c -}
+
+{com}. 
+. * more options for tables with the estout package 
+. * if you need to install: ssc install estout
+. * best thing: you can export!
+. #delimit;
+{txt}delimiter now ;
+{com}. esttab linprob logit probit /* using intro.csv */
+> ,       star(* .1 ** .05 *** .01)
+>         mtitles(LPM probit logit) nonumbers
+>         coeflabels( x1 "X 1" x2 "X 2" _cons "Constant")
+>         /* these are the exporting options. Use csv to make a Excel-compatible
+>         file; tex for LaTeX; rtf for text (or Word). See the help file */
+>         /* csv replace */
+> ;
+{res}
+{txt}{hline 60}
+{txt}                      LPM          probit           logit   
+{txt}{hline 60}
+{txt}X 1         {res}        0.227***        1.609***        0.942***{txt}
+            {res} {ralign 12:{txt:(}15.23{txt:)}}    {ralign 12:{txt:(}9.53{txt:)}}    {ralign 12:{txt:(}10.22{txt:)}}   {txt}
+
+{txt}X 2         {res}        0.174***        1.265***        0.755***{txt}
+            {res} {ralign 12:{txt:(}2.97{txt:)}}    {ralign 12:{txt:(}2.97{txt:)}}    {ralign 12:{txt:(}3.10{txt:)}}   {txt}
+
+{txt}Constant    {res}        0.329***       -1.433***       -0.844***{txt}
+            {res} {ralign 12:{txt:(}7.51{txt:)}}    {ralign 12:{txt:(}-4.75{txt:)}}    {ralign 12:{txt:(}-4.86{txt:)}}   {txt}
+{txt}{hline 60}
+{txt}N           {res}          500             500             500   {txt}
+{txt}{hline 60}
+{txt}t statistics in parentheses
+{txt}* p<.1, ** p<.05, *** p<.01
+
+{com}. #delimit cr
+{txt}delimiter now cr
+{com}. 
+. /* Let's graph the marginal effects. Remember that
+> max. likelihood models have MFX that differ for each observation!
+> Linear models (ie OLS-like) have constant MFX.
+> We look only at x1; x2 is analogous 
+> For linear models, Ey = c + b*x1, so the MFX
+> of x1 on y is dy/dx1 = b. 
+> In nonlinear models, Ey = f(c + bx1), where f(.)
+> depends on which estimator you are using. For logit, 
+> y* = Pr(y = 1 | x1) = (exp(c + bx1))/(1 + exp(c + bx1)), so the mfx is
+> dy/dx1 = (exp(c + bx1) / (1 + exp(c + bx1))^2)*b (yes it is,
+> check for yourself!).
+> For probit, f(.) is the standard normal cumul. distr.
+> 
+> The mfx depends on the entire distribution, and is thus different
+> for all observations! Documenting the coefficient - even 
+> if suitably transformed - is not always informative! 
+> Better to compute for all x, and make a graph/table. 
+> Also be careful with interactions/quadratics etc! It is
+> important to know what you are estimating to know how to interpret.
+> Usefull articles: 
+> - Ai & Norton, 2004, Econ. Letters, Interaction terms in logit and probit models
+> - Ai, Norton & Wang, 2004, stata journal, computing interaction effects and standard errors
+>         in logit and probit models.
+> 
+> This kind of stuff is valid - mutatis mutandis - for all nonlinear models:
+> count data, survival data, mulitinomial data etc
+> */
+. cap drop xb
+{txt}
+{com}. cap drop mflogit
+{txt}
+{com}. est replay logit
+
+{txt}{hline}
+{p 0 8}Model {hi:logit}{p_end}
+{hline}
+
+Logistic regression                               Number of obs   = {res}       500
+                                                  {txt}LR chi2({res}2{txt})      = {res}    154.31
+                                                  {txt}Prob > chi2     = {res}    0.0000
+{txt}Log likelihood = {res}-214.47339                       {txt}Pseudo R2       = {res}    0.2646
+
+{txt}{hline 13}{c TT}{hline 64}
+           y {c |}      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+{hline 13}{c +}{hline 64}
+          x1 {c |}  {res} 1.608995   .1687473     9.53   0.000     1.278256    1.939733
+          {txt}x2 {c |}  {res} 1.264556   .4253538     2.97   0.003      .430878    2.098234
+       {txt}_cons {c |}  {res} -1.43312   .3014325    -4.75   0.000    -2.023917   -.8423233
+{txt}{hline 13}{c BT}{hline 64}
+
+{com}. scalar b = _b[x1]
+{txt}
+{com}. predict xb, xb // Here, we compute c + b1*x1 + b2*x2 for all observations
+{txt}
+{com}. gen mflogit = ((exp(xb)/(1 + exp(xb))^2))*b
+{txt}
+{com}. 
+. cap drop xb
+{txt}
+{com}. cap drop mfprobit
+{txt}
+{com}. est replay probit
+
+{txt}{hline}
+{p 0 8}Model {hi:probit}{p_end}
+{hline}
+
+Probit regression                                 Number of obs   = {res}       500
+                                                  {txt}LR chi2({res}2{txt})      = {res}    156.22
+                                                  {txt}Prob > chi2     = {res}    0.0000
+{txt}Log likelihood = {res} -213.5193                       {txt}Pseudo R2       = {res}    0.2678
+
+{txt}{hline 13}{c TT}{hline 64}
+           y {c |}      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+{hline 13}{c +}{hline 64}
+          x1 {c |}  {res} .9422982   .0921867    10.22   0.000     .7616155    1.122981
+          {txt}x2 {c |}  {res} .7545344   .2437788     3.10   0.002     .2767368    1.232332
+       {txt}_cons {c |}  {res}-.8441415   .1738432    -4.86   0.000    -1.184868    -.503415
+{txt}{hline 13}{c BT}{hline 64}
+
+{com}. scalar b = _b[x1]
+{txt}
+{com}. predict xb, xb
+{txt}
+{com}. gen mfprobit = normalden(xb)*b // probit assumes the cumul. norm dens -> dy/dx is normal prob. dens.
+{txt}
+{com}. graph twoway ///
+>         scatter mfprobit x1, ms(+) ///  
+> ||      scatter mflogit x1, ms(x) mc(red)
+{res}{txt}
+{com}. 
+. /* These graphs are so diffuse, because the linear predictions
+> (the xb's) include the variation from x2, which is not very useful here.
+> We can also compute this while keeping x2 constant, for instance at it's 
+> mean. How could we do that? */
+. 
+. cap drop xb
+{txt}
+{com}. cap drop mflogit
+{txt}
+{com}. est replay logit
+
+{txt}{hline}
+{p 0 8}Model {hi:logit}{p_end}
+{hline}
+
+Logistic regression                               Number of obs   = {res}       500
+                                                  {txt}LR chi2({res}2{txt})      = {res}    154.31
+                                                  {txt}Prob > chi2     = {res}    0.0000
+{txt}Log likelihood = {res}-214.47339                       {txt}Pseudo R2       = {res}    0.2646
+
+{txt}{hline 13}{c TT}{hline 64}
+           y {c |}      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+{hline 13}{c +}{hline 64}
+          x1 {c |}  {res} 1.608995   .1687473     9.53   0.000     1.278256    1.939733
+          {txt}x2 {c |}  {res} 1.264556   .4253538     2.97   0.003      .430878    2.098234
+       {txt}_cons {c |}  {res} -1.43312   .3014325    -4.75   0.000    -2.023917   -.8423233
+{txt}{hline 13}{c BT}{hline 64}
+
+{com}. scalar b = _b[x1]
+{txt}
+{com}. adjust x2, xb gen(xb) // Here, we compute c + b1*x1 + b2*mean(x2) for all observations
+
+{txt}{hline 128}
+     Dependent variable: y     Command: logit
+       Created variable: xb{res}
+{txt}    Variable left as is: x1{res}
+{txt}  Covariate set to mean: x2 = .49610391{res}
+{txt}{hline 128}
+
+{hline 10}{c TT}{hline 11}
+      All {c |}         xb
+{hline 10}{c +}{hline 11}
+          {c |}    {res}1.42808
+{txt}{hline 10}{c BT}{hline 11}
+     Key:  xb  =  Linear Prediction
+
+{com}. gen mflogit = ((exp(xb)/(1 + exp(xb))^2))*b
+{txt}
+{com}. 
+. cap drop xb
+{txt}
+{com}. cap drop mfprobit
+{txt}
+{com}. est replay probit
+
+{txt}{hline}
+{p 0 8}Model {hi:probit}{p_end}
+{hline}
+
+Probit regression                                 Number of obs   = {res}       500
+                                                  {txt}LR chi2({res}2{txt})      = {res}    156.22
+                                                  {txt}Prob > chi2     = {res}    0.0000
+{txt}Log likelihood = {res} -213.5193                       {txt}Pseudo R2       = {res}    0.2678
+
+{txt}{hline 13}{c TT}{hline 64}
+           y {c |}      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+{hline 13}{c +}{hline 64}
+          x1 {c |}  {res} .9422982   .0921867    10.22   0.000     .7616155    1.122981
+          {txt}x2 {c |}  {res} .7545344   .2437788     3.10   0.002     .2767368    1.232332
+       {txt}_cons {c |}  {res}-.8441415   .1738432    -4.86   0.000    -1.184868    -.503415
+{txt}{hline 13}{c BT}{hline 64}
+
+{com}. scalar b = _b[x1]
+{txt}
+{com}. adjust x2, xb gen(xb)
+
+{txt}{hline 128}
+     Dependent variable: y     Command: logit
+       Created variable: xb{res}
+{txt}    Variable left as is: x1{res}
+{txt}  Covariate set to mean: x2 = .49610391{res}
+{txt}{hline 128}
+
+{hline 10}{c TT}{hline 11}
+      All {c |}         xb
+{hline 10}{c +}{hline 11}
+          {c |}    {res}1.42808
+{txt}{hline 10}{c BT}{hline 11}
+     Key:  xb  =  Linear Prediction
+
+{com}. gen mfprobit = normalden(xb)*b // probit assumes the cumul. norm dens -> dy/dx is normal prob. dens.
+{txt}
+{com}. graph twoway ///
+>         scatter mfprobit x1, ms(+) ///
+> ||      scatter mflogit x1, ms(x) mc(red)
+{res}{txt}
+{com}. 
+. /* Take care with the adjust command if you use it with quadratic terms/interactions!
+> Stata does NOT recognise that your variable xsq = X^2. Setting x2 to its mean also
+> requires setting xsq = (mean(x2))^2. You NEED to do this manually! See the adjust help file
+> on how to this. */
+. 
+. 
+. /* We can also use the dprobit command (only for probit), 
+> or the mfx postestimation command */
+. probit y x1 x2 
+
+{txt}Iteration 0:   log likelihood = {res}-291.62942
+{txt}Iteration 1:   log likelihood = {res}-219.48503
+{txt}Iteration 2:   log likelihood = {res}-213.67475
+{txt}Iteration 3:   log likelihood = {res}-213.51946
+{txt}Iteration 4:   log likelihood = {res} -213.5193
+
+{txt}Probit regression                                 Number of obs   = {res}       500
+                                                  {txt}LR chi2({res}2{txt})      = {res}    156.22
+                                                  {txt}Prob > chi2     = {res}    0.0000
+{txt}Log likelihood = {res} -213.5193                       {txt}Pseudo R2       = {res}    0.2678
+
+{txt}{hline 13}{c TT}{hline 64}
+           y {c |}      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+{hline 13}{c +}{hline 64}
+          x1 {c |}  {res} .9422982   .0921867    10.22   0.000     .7616155    1.122981
+          {txt}x2 {c |}  {res} .7545344   .2437788     3.10   0.002     .2767368    1.232332
+       {txt}_cons {c |}  {res}-.8441415   .1738432    -4.86   0.000    -1.184868    -.503415
+{txt}{hline 13}{c BT}{hline 64}
+
+{com}. mfx
+
+{txt}Marginal effects after probit
+      y  = Pr(y) (predict)
+         = {res} .79910355
+{txt}{hline 9}{c TT}{hline 68}
+variable {c |}{col 17}dy/dx{col 26}Std. Err.{col 40}z{col 45}P>|z|{col 52}[    95% C.I.   ]{col 75}X
+{hline 9}{c +}{hline 68}
+      x1 {c |}  {res} .2645172      .02436   10.86   0.000   .216768  .312267   1.38835
+      {txt}x2 {c |}  {res} .2118091       .0679    3.12   0.002   .078718    .3449   .496104
+{txt}{hline 9}{c BT}{hline 68}
+
+{com}. dprobit y x1 x2
+
+{txt}Iteration 0:   log likelihood = {res}-291.62942
+{txt}Iteration 1:   log likelihood = {res}-219.48503
+{txt}Iteration 2:   log likelihood = {res}-213.67475
+{txt}Iteration 3:   log likelihood = {res}-213.51946
+{txt}Iteration 4:   log likelihood = {res} -213.5193
+
+{txt}Probit regression, reporting marginal effects           Number of obs ={res}    500
+                                                        {txt}LR chi2({res}2{txt})    ={res} 156.22
+                                                        {txt}Prob > chi2   ={res} 0.0000
+{txt}Log likelihood = {res} -213.5193                             {txt}Pseudo R2     ={res} 0.2678
+
+{txt}{hline 9}{c TT}{hline 68}
+       y {c |}{col 17}dF/dx{col 25}Std. Err.{col 40}z{col 45}P>|z|{col 55}x-bar{col 62}[    95% C.I.   ]
+{hline 9}{c +}{hline 68}
+      x1 {c |}  {res} .2645172   .0243625    10.22   0.000   1.38835   .216768  .312267
+      {txt}x2 {c |}  {res} .2118091   .0679046     3.10   0.002   .496104   .078718    .3449
+{txt}{hline 9}{c +}{hline 68}
+  obs. P {c |}  {res}      .73
+{txt} pred. P {c |}  {res} .7991036{txt}  (at x-bar)
+{hline 9}{c BT}{hline 68}
+{p 4 0 0}z and P>|z| correspond to the test of the underlying coefficient being 0
+
+{com}. 
+. logit y x1 x2
+
+{txt}Iteration 0:   log likelihood = {res}-291.62942
+{txt}Iteration 1:   log likelihood = {res}-221.42755
+{txt}Iteration 2:   log likelihood = {res}-214.79304
+{txt}Iteration 3:   log likelihood = {res}-214.47457
+{txt}Iteration 4:   log likelihood = {res}-214.47339
+
+{txt}Logistic regression                               Number of obs   = {res}       500
+                                                  {txt}LR chi2({res}2{txt})      = {res}    154.31
+                                                  {txt}Prob > chi2     = {res}    0.0000
+{txt}Log likelihood = {res}-214.47339                       {txt}Pseudo R2       = {res}    0.2646
+
+{txt}{hline 13}{c TT}{hline 64}
+           y {c |}      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+{hline 13}{c +}{hline 64}
+          x1 {c |}  {res} 1.608995   .1687473     9.53   0.000     1.278256    1.939733
+          {txt}x2 {c |}  {res} 1.264556   .4253538     2.97   0.003      .430878    2.098234
+       {txt}_cons {c |}  {res} -1.43312   .3014325    -4.75   0.000    -2.023917   -.8423233
+{txt}{hline 13}{c BT}{hline 64}
+
+{com}. mfx
+
+{txt}Marginal effects after logit
+      y  = Pr(y) (predict)
+         = {res} .80660123
+{txt}{hline 9}{c TT}{hline 68}
+variable {c |}{col 17}dy/dx{col 26}Std. Err.{col 40}z{col 45}P>|z|{col 52}[    95% C.I.   ]{col 75}X
+{hline 9}{c +}{hline 68}
+      x1 {c |}  {res} .2509962      .02421   10.37   0.000   .203552  .298441   1.38835
+      {txt}x2 {c |}  {res} .1972653      .06586    3.00   0.003   .068188  .326342   .496104
+{txt}{hline 9}{c BT}{hline 68}
+
+{com}. 
+. 
+. /* extending it a bitÉI show the (transformed) estimate, ie f'(mean(x)),
+> and the average of indiv. mfx, ie mean(f'(x)). Note the difference, 
+> and more importantly, note how little the average tells you! */
+. est res logit
+{txt}(results {stata estimates replay logit:logit} are active now)
+
+{com}. local blog = ((exp(_b[x1])/(1 + exp(_b[x1]))^2))
+{txt}
+{com}. qui summ mflogit, meanonly
+{txt}
+{com}. local mflog = r(mean)
+{txt}
+{com}. est res probit
+{txt}(results {stata estimates replay probit:probit} are active now)
+
+{com}. local bprob = normalden(_b[x1])
+{txt}
+{com}. qui summ mfprobit, meanonly
+{txt}
+{com}. local mfprob = r(mean)
+{txt}
+{com}. 
+. macro list _mflog _blog _mfprob _bprob
+{txt}{p 0 16}
+_mflog:{space 9}{res}{res}.2247592108775862
+{p_end}
+{txt}{p 0 16}
+_blog:{space 10}{res}{res}.1389299216330013
+{p_end}
+{txt}{p 0 16}
+_mfprob:{space 8}{res}{res}.2543491290460411
+{p_end}
+{txt}{p 0 16}
+_bprob:{space 9}{res}{res}.2559171634367285
+{p_end}
+{txt}
+{com}. 
+. graph twoway ///
+>         scatter mfprobit x1 ///
+> ,       ms(+) mc(black) yline(`bprob', lc(black) lp(solid)) yline(`mfprob', lc(black) lp(dash)) ///
+> ||      scatter mflogit x1 ///
+> ,       ms(x) mc(red) yline(`blog', lc(red) lp(solid)) yline(`mflog', lc(red) lp(dash))
+{res}{txt}
+{com}. 
+. /* We can also show predicted probabilities with the ``,pr'' option of predict and adjust */
+. cap drop plog
+{txt}
+{com}. cap drop pprob
+{txt}
+{com}. cap drop plin
+{txt}
+{com}. est res logit
+{txt}(results {stata estimates replay logit:logit} are active now)
+
+{com}. adjust x2, pr gen(plog)
+
+{txt}{hline 128}
+     Dependent variable: y     Command: logit
+       Created variable: plog{res}
+{txt}    Variable left as is: x1{res}
+{txt}  Covariate set to mean: x2 = .49610391{res}
+{txt}{hline 128}
+
+{hline 10}{c TT}{hline 11}
+      All {c |}         pr
+{hline 10}{c +}{hline 11}
+          {c |}    {res}.806601
+{txt}{hline 10}{c BT}{hline 11}
+     Key:  pr  =  Probability
+
+{com}. est res probit
+{txt}(results {stata estimates replay probit:probit} are active now)
+
+{com}. adjust x2, pr gen(pprob)
+
+{txt}{hline 128}
+     Dependent variable: y     Command: probit
+       Created variable: pprob{res}
+{txt}    Variable left as is: x1{res}
+{txt}  Covariate set to mean: x2 = .49610391{res}
+{txt}{hline 128}
+
+{hline 10}{c TT}{hline 11}
+      All {c |}         pr
+{hline 10}{c +}{hline 11}
+          {c |}    {res}.799104
+{txt}{hline 10}{c BT}{hline 11}
+     Key:  pr  =  Probability
+
+{com}. est res linprob
+{txt}(results {stata estimates replay linprob:linprob} are active now)
+
+{com}. adjust x2, xb gen(plin)
+
+{txt}{hline 128}
+     Dependent variable: y     Command: regress
+       Created variable: plin{res}
+{txt}    Variable left as is: x1{res}
+{txt}  Covariate set to mean: x2 = .49610391{res}
+{txt}{hline 128}
+
+{hline 10}{c TT}{hline 11}
+      All {c |}         xb
+{hline 10}{c +}{hline 11}
+          {c |}        {res}.73
+{txt}{hline 10}{c BT}{hline 11}
+     Key:  xb  =  Linear Prediction
+
+{com}. sort x1
+{txt}
+{com}. graph twoway ///
+>         line plog x1 ///
+> ||      line pprob x1 ///
+> ||      line plin x1 ///
+> ,       scheme(sj) ///
+>         legend(lab(1 "Logit") lab(2 "Probit") lab(3 "OLS") rows(1)) ///
+>         title(Predicted probabilities) ///
+>         ytitle("Predicted" "Probability", orient(horiz) size(medlarge)) yscale(titlegap(*5)) ///
+>         ylabel(, alternate) ///
+>         xtitle(X1, size(medlarge)) xscale(titlegap(*5)) ///
+>         yline(0 1, lc(black) lp(dash))
+{res}{txt}
+{com}.         
+. /* Programs */
+. /* If you need to do a certain task very often,
+> you can choose to make a program. Often, such a program
+> will be a loop as discussed before, but somehow generalised 
+> to accept different variables. You can save your program is an
+> .ado file in the appropriate directory. Stata will then look for your program 
+> when you call it.
+> A useful package is the adoedit package, which allows you
+> to easily call the code for other programs, so you can have a look
+>  */
+. 
+. *which greet
+. *adoedit greet
+. 
+. *log close intro
+. exit
+
+{txt}end of do-file
+
+
+{com}. findit wbopendata
+
+. help wbopendata
+
+. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]impute.do"
+{err}{p 0 4}
+file 1]impute.do
+not found
+{p_end}
+{txt}{search r(601):r(601);}
+
+end of do-file
+
+{search r(601):r(601);}
+
+{com}. do "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/RPaUG.do"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]imputation.do"
+{err}{p 0 4}
+file 1]imputation.do
+not found
+{p_end}
+{txt}{search r(601):r(601);}
+
+end of do-file
+
+{search r(601):r(601);}
+
+{com}. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]imputation.do"
+{err}{p 0 4}
+file 1]imputation.do
+not found
+{p_end}
+{txt}{search r(601):r(601);}
+
+end of do-file
+
+{search r(601):r(601);}
+
+{com}. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. do "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/"
+{err}{p 0 4}
+file /Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/.do
+not found
+{p_end}
+{txt}{search r(601):r(601);}
+
+end of do-file
+
+{search r(601):r(601);}
+
+{com}. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. do "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{err}{p 0 4}
+file /Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis.do
+not found
+{p_end}
+{txt}{search r(601):r(601);}
+
+end of do-file
+
+{search r(601):r(601);}
+
+{com}. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]imputation.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file imputes missing values by
+> 1) linear intrapolation
+> 2) multiple imputation
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "1]imputation.smcl", replace
+{txt}(note: file /Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl not found)
+{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:26:55
+{txt}
+{com}. 
+. use "/Users/matthijsdezwaan/workdir/steden/Data/ADZ.dta"
+{txt}(Apeldoorn, Deventer and Zwolle; 1851-1914)
+
+{com}. keep if tin(1851, 1910)
+{txt}(12 observations deleted)
+
+{com}. save "`datdir'/RPAUG.dta", replace
+{txt}file ../Data/RPAUG.dta saved
+
+{com}. describe, short
+
+{txt}Contains data from {res}../Data/RPAUG.dta
+{txt}  obs:{res}           180                          Apeldoorn, Deventer and Zwolle; 1851-1914
+{txt} vars:{res}           259                          15 Mar 2011 15:26
+{txt} size:{res}       148,680{txt} (99.7% of memory free)
+Sorted by:  {res}cityid  year
+{txt}
+{com}. tsreport, report0 panel list
+
+{txt}Number of gaps in sample:  {res}0
+{txt}
+{com}. xtdescribe
+
+  {txt}cityid:  {res}1{txt}, {res}2{txt}, ..., {res}3                                      {txt}n ={res}          3
+    {txt}year:  {res}1851, 1852, ..., 1910                             {txt}T ={res}         60
+           {txt}Delta(year) = {res}1 year
+           {txt}Span(year)  = {res}60 periods
+           {txt}(cityid*year uniquely identifies each observation)
+
+Distribution of T_i:   min      5%     25%       50%       75%     95%     max
+                    {res}    60      60      60        60        60      60      60
+
+{txt}{col 6}Freq.  Percent    Cum. {c |}  Pattern
+ {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00  100.00{txt} {c |}  {res}111111111111111111111111111111111111111111111111111111111111
+{txt} {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00        {txt} {c |}  {res}XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+{txt}
+{com}. misstable summarize
+{txt}{col 64}Obs<.
+{col 49}{c TLC}{hline 30}
+{col 16}{c |}{col 49}{c |} Unique
+{col 7}Variable {c |}{col 22}Obs=.{col 32}Obs>.{col 42}Obs<.{col 49}{c |} values{col 65}Min{col 77}Max
+  {hline 13}{c +}{hline 32}{c +}{hline 30}
+           GDP {c |}{res}         5{txt}{space 10}{res}       175{txt}  {c |}     63      219.1       388.6
+           H_R {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126   .9130484    1.520354
+         R_bap {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    105          2         371
+         R_cal {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    117        147        3912
+         R_cat {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    125       1603        7989
+         R_jud {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    112         17         772
+         R_lut {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    113         59         663
+         R_oth {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}     75          0         433
+         R_pro {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126       9484       25709
+          S_DD {c |}{res}       120{txt}{space 10}{res}        60{txt}  {c |}      3          2           4
+    population {c |}{res}        10{txt}{space 10}{res}       170{txt}  {c |}    170      10269       36507
+  {hline 13}{c BT}{hline 32}{c BT}{hline 30}
+
+{com}. misstable patterns
+{res}
+                {txt}Missing-value patterns
+                  (1 means complete)
+
+{res}{txt}{space 2}            {c |}   Pattern
+{space 2}  Percent   {c |}  1  2  3  4    5  6  7  8    9 10 11
+{space 2}{hline 12}{c +}{hline 38}
+{space 2} {res:    26}%    {c |}  1  1  1  1    1  1  1  1    1  1  1
+{space 2}{space 12}{c |}
+{space 2} {res:    39}     {c |}  1  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:    19}     {c |}  1  1  0  0    0  0  0  0    0  0  0
+{space 2} {res:     8}     {c |}  1  1  0  0    0  0  0  0    0  0  1
+{space 2} {res:     3}     {c |}  0  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:     3}     {c |}  1  0  0  0    0  0  0  0    0  0  0
+{space 2} {res:     3}     {c |}  1  0  1  1    1  1  1  1    1  1  0
+{space 2}{hline 12}{c +}{hline 38}
+{space 2}    {res:100}%    {c |}
+
+{p 2 16 2}
+Variables are
+{bind: (1) {res:GDP}}
+{bind: (2) {res:population}}
+{bind: (3) {res:H_R}}
+{bind: (4) {res:R_bap}}
+{bind: (5) {res:R_cal}}
+{bind: (6) {res:R_cat}}
+{bind: (7) {res:R_jud}}
+{bind: (8) {res:R_lut}}
+{bind: (9) {res:R_oth}}
+{bind: (10) {res:R_pro}}
+{bind: (11) {res:S_DD}}
+{p_end}
+
+{com}. 
+. /* 1) Imputation by linear intra- (extra-) polation */
+. preserve
+{txt}
+{com}. include "2a]linimp.do"
+{err}{p 0 4}
+file 2a]linimp.do
+not found
+{p_end}
+{txt}{search r(601):r(601);}
+
+end of do-file
+{search r(601):r(601);}
+
+end of do-file
+
+{search r(601):r(601);}
+
+{com}. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]imputation.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file imputes missing values by
+> 1) linear intrapolation
+> 2) multiple imputation
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "1]imputation.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:27:38
+{txt}
+{com}. 
+. use "/Users/matthijsdezwaan/workdir/steden/Data/ADZ.dta"
+{txt}(Apeldoorn, Deventer and Zwolle; 1851-1914)
+
+{com}. keep if tin(1851, 1910)
+{txt}(12 observations deleted)
+
+{com}. save "`datdir'/RPAUG.dta", replace
+{txt}file ../Data/RPAUG.dta saved
+
+{com}. describe, short
+
+{txt}Contains data from {res}../Data/RPAUG.dta
+{txt}  obs:{res}           180                          Apeldoorn, Deventer and Zwolle; 1851-1914
+{txt} vars:{res}           259                          15 Mar 2011 15:27
+{txt} size:{res}       148,680{txt} (99.7% of memory free)
+Sorted by:  {res}cityid  year
+{txt}
+{com}. tsreport, report0 panel list
+
+{txt}Number of gaps in sample:  {res}0
+{txt}
+{com}. xtdescribe
+
+  {txt}cityid:  {res}1{txt}, {res}2{txt}, ..., {res}3                                      {txt}n ={res}          3
+    {txt}year:  {res}1851, 1852, ..., 1910                             {txt}T ={res}         60
+           {txt}Delta(year) = {res}1 year
+           {txt}Span(year)  = {res}60 periods
+           {txt}(cityid*year uniquely identifies each observation)
+
+Distribution of T_i:   min      5%     25%       50%       75%     95%     max
+                    {res}    60      60      60        60        60      60      60
+
+{txt}{col 6}Freq.  Percent    Cum. {c |}  Pattern
+ {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00  100.00{txt} {c |}  {res}111111111111111111111111111111111111111111111111111111111111
+{txt} {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00        {txt} {c |}  {res}XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+{txt}
+{com}. misstable summarize
+{txt}{col 64}Obs<.
+{col 49}{c TLC}{hline 30}
+{col 16}{c |}{col 49}{c |} Unique
+{col 7}Variable {c |}{col 22}Obs=.{col 32}Obs>.{col 42}Obs<.{col 49}{c |} values{col 65}Min{col 77}Max
+  {hline 13}{c +}{hline 32}{c +}{hline 30}
+           GDP {c |}{res}         5{txt}{space 10}{res}       175{txt}  {c |}     63      219.1       388.6
+           H_R {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126   .9130484    1.520354
+         R_bap {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    105          2         371
+         R_cal {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    117        147        3912
+         R_cat {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    125       1603        7989
+         R_jud {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    112         17         772
+         R_lut {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    113         59         663
+         R_oth {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}     75          0         433
+         R_pro {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126       9484       25709
+          S_DD {c |}{res}       120{txt}{space 10}{res}        60{txt}  {c |}      3          2           4
+    population {c |}{res}        10{txt}{space 10}{res}       170{txt}  {c |}    170      10269       36507
+  {hline 13}{c BT}{hline 32}{c BT}{hline 30}
+
+{com}. misstable patterns
+{res}
+                {txt}Missing-value patterns
+                  (1 means complete)
+
+{res}{txt}{space 2}            {c |}   Pattern
+{space 2}  Percent   {c |}  1  2  3  4    5  6  7  8    9 10 11
+{space 2}{hline 12}{c +}{hline 38}
+{space 2} {res:    26}%    {c |}  1  1  1  1    1  1  1  1    1  1  1
+{space 2}{space 12}{c |}
+{space 2} {res:    39}     {c |}  1  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:    19}     {c |}  1  1  0  0    0  0  0  0    0  0  0
+{space 2} {res:     8}     {c |}  1  1  0  0    0  0  0  0    0  0  1
+{space 2} {res:     3}     {c |}  0  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:     3}     {c |}  1  0  0  0    0  0  0  0    0  0  0
+{space 2} {res:     3}     {c |}  1  0  1  1    1  1  1  1    1  1  0
+{space 2}{hline 12}{c +}{hline 38}
+{space 2}    {res:100}%    {c |}
+
+{p 2 16 2}
+Variables are
+{bind: (1) {res:GDP}}
+{bind: (2) {res:population}}
+{bind: (3) {res:H_R}}
+{bind: (4) {res:R_bap}}
+{bind: (5) {res:R_cal}}
+{bind: (6) {res:R_cat}}
+{bind: (7) {res:R_jud}}
+{bind: (8) {res:R_lut}}
+{bind: (9) {res:R_oth}}
+{bind: (10) {res:R_pro}}
+{bind: (11) {res:S_DD}}
+{p_end}
+
+{com}. 
+. /* 1) Imputation by linear intra- (extra-) polation */
+. preserve
+{txt}
+{com}. include "1a]linimp.do"
+{txt}
+{com}. d R_???, varlist
+
+              {txt}storage  display     value
+variable name   type   format      label      variable label
+{hline}
+{p 0 48}{res}{bind:R_bap          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: baptist{p_end}
+{p 0 48}{bind:R_cal          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: orthodox calvinist{p_end}
+{p 0 48}{bind:R_cat          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: catholic{p_end}
+{p 0 48}{bind:R_jud          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: judaist{p_end}
+{p 0 48}{bind:R_lut          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: lutheran{p_end}
+{p 0 48}{bind:R_oth          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: other (excluding not){p_end}
+{p 0 48}{bind:R_pro          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: liberal protestant{p_end}
+{txt}
+{com}. local rellist `r(varlist)'
+{txt}
+{com}. macro list _rellist
+{txt}{p 0 16}
+_rellist:{space 7}{res}{res}R_bap R_cal R_cat R_jud R_lut R_oth R_pro
+{p_end}
+{txt}
+{com}. foreach rel of local rellist    {c -(}
+{txt}  2{com}.         tempvar temp
+{txt}  3{com}.         by cityid: ipolate `rel' year, epolate gen(`temp')
+{txt}  4{com}.         replace `rel' = `temp'
+{txt}  5{com}. {c )-}
+{txt}R_bap was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+R_cal was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+R_cat was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+R_jud was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+R_lut was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+R_oth was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+R_pro was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+
+{com}. 
+. save "`datdir/RPAUG_li'"
+{txt}file ../Data.dta saved
+
+{com}. {txt}
+{com}. restore
+{txt}
+{com}. 
+. /* 2) Imputation by multiple imputation */
+. preserve
+{txt}
+{com}. *include "1b]multimp.do"
+. restore
+{txt}
+{com}. 
+. log close
+      {txt}name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res}15 Mar 2011, 15:27:39
+{txt}{.-}
+
+{com}. exit
+
+{txt}end of do-file
+
+{com}. /* Do imputations */
+. do "2]createvars.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file uses the two imputed data files to 
+> create the variables needed for the analysis.
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "2]createvars.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/2]createvars.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:27:39
+{txt}
+{com}. 
+. /* Linear imputation */
+. 
+. use "`datdir'/RPAUG_li.dta"
+{err}{p 0 4}
+file ../Data/RPAUG_li.dta
+not found
+{p_end}
+{txt}{search r(601):r(601);}
+
+end of do-file
+{search r(601):r(601);}
+
+end of do-file
+
+{search r(601):r(601);}
+
+{com}. help clonevar
+
+. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]imputation.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file imputes missing values by
+> 1) linear intrapolation
+> 2) multiple imputation
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "1]imputation.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:31:36
+{txt}
+{com}. 
+. use "/Users/matthijsdezwaan/workdir/steden/Data/ADZ.dta"
+{txt}(Apeldoorn, Deventer and Zwolle; 1851-1914)
+
+{com}. keep if tin(1851, 1910)
+{txt}(12 observations deleted)
+
+{com}. save "`datdir'/RPAUG.dta", replace
+{txt}file ../Data/RPAUG.dta saved
+
+{com}. describe, short
+
+{txt}Contains data from {res}../Data/RPAUG.dta
+{txt}  obs:{res}           180                          Apeldoorn, Deventer and Zwolle; 1851-1914
+{txt} vars:{res}           259                          15 Mar 2011 15:31
+{txt} size:{res}       148,680{txt} (99.7% of memory free)
+Sorted by:  {res}cityid  year
+{txt}
+{com}. tsreport, report0 panel list
+
+{txt}Number of gaps in sample:  {res}0
+{txt}
+{com}. xtdescribe
+
+  {txt}cityid:  {res}1{txt}, {res}2{txt}, ..., {res}3                                      {txt}n ={res}          3
+    {txt}year:  {res}1851, 1852, ..., 1910                             {txt}T ={res}         60
+           {txt}Delta(year) = {res}1 year
+           {txt}Span(year)  = {res}60 periods
+           {txt}(cityid*year uniquely identifies each observation)
+
+Distribution of T_i:   min      5%     25%       50%       75%     95%     max
+                    {res}    60      60      60        60        60      60      60
+
+{txt}{col 6}Freq.  Percent    Cum. {c |}  Pattern
+ {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00  100.00{txt} {c |}  {res}111111111111111111111111111111111111111111111111111111111111
+{txt} {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00        {txt} {c |}  {res}XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+{txt}
+{com}. misstable summarize
+{txt}{col 64}Obs<.
+{col 49}{c TLC}{hline 30}
+{col 16}{c |}{col 49}{c |} Unique
+{col 7}Variable {c |}{col 22}Obs=.{col 32}Obs>.{col 42}Obs<.{col 49}{c |} values{col 65}Min{col 77}Max
+  {hline 13}{c +}{hline 32}{c +}{hline 30}
+           GDP {c |}{res}         5{txt}{space 10}{res}       175{txt}  {c |}     63      219.1       388.6
+           H_R {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126   .9130484    1.520354
+         R_bap {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    105          2         371
+         R_cal {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    117        147        3912
+         R_cat {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    125       1603        7989
+         R_jud {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    112         17         772
+         R_lut {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    113         59         663
+         R_oth {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}     75          0         433
+         R_pro {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126       9484       25709
+          S_DD {c |}{res}       120{txt}{space 10}{res}        60{txt}  {c |}      3          2           4
+    population {c |}{res}        10{txt}{space 10}{res}       170{txt}  {c |}    170      10269       36507
+  {hline 13}{c BT}{hline 32}{c BT}{hline 30}
+
+{com}. misstable patterns
+{res}
+                {txt}Missing-value patterns
+                  (1 means complete)
+
+{res}{txt}{space 2}            {c |}   Pattern
+{space 2}  Percent   {c |}  1  2  3  4    5  6  7  8    9 10 11
+{space 2}{hline 12}{c +}{hline 38}
+{space 2} {res:    26}%    {c |}  1  1  1  1    1  1  1  1    1  1  1
+{space 2}{space 12}{c |}
+{space 2} {res:    39}     {c |}  1  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:    19}     {c |}  1  1  0  0    0  0  0  0    0  0  0
+{space 2} {res:     8}     {c |}  1  1  0  0    0  0  0  0    0  0  1
+{space 2} {res:     3}     {c |}  0  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:     3}     {c |}  1  0  0  0    0  0  0  0    0  0  0
+{space 2} {res:     3}     {c |}  1  0  1  1    1  1  1  1    1  1  0
+{space 2}{hline 12}{c +}{hline 38}
+{space 2}    {res:100}%    {c |}
+
+{p 2 16 2}
+Variables are
+{bind: (1) {res:GDP}}
+{bind: (2) {res:population}}
+{bind: (3) {res:H_R}}
+{bind: (4) {res:R_bap}}
+{bind: (5) {res:R_cal}}
+{bind: (6) {res:R_cat}}
+{bind: (7) {res:R_jud}}
+{bind: (8) {res:R_lut}}
+{bind: (9) {res:R_oth}}
+{bind: (10) {res:R_pro}}
+{bind: (11) {res:S_DD}}
+{p_end}
+
+{com}. 
+. /* 1) Imputation by linear intra- (extra-) polation */
+. preserve
+{txt}
+{com}. include "1a]linimp.do"
+{txt}
+{com}. d R_???, varlist
+
+              {txt}storage  display     value
+variable name   type   format      label      variable label
+{hline}
+{p 0 48}{res}{bind:R_bap          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: baptist{p_end}
+{p 0 48}{bind:R_cal          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: orthodox calvinist{p_end}
+{p 0 48}{bind:R_cat          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: catholic{p_end}
+{p 0 48}{bind:R_jud          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: judaist{p_end}
+{p 0 48}{bind:R_lut          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: lutheran{p_end}
+{p 0 48}{bind:R_oth          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: other (excluding not){p_end}
+{p 0 48}{bind:R_pro          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: liberal protestant{p_end}
+{txt}
+{com}. local rellist `r(varlist)'
+{txt}
+{com}. macro list _rellist
+{txt}{p 0 16}
+_rellist:{space 7}{res}{res}R_bap R_cal R_cat R_jud R_lut R_oth R_pro
+{p_end}
+{txt}
+{com}. foreach rel of local rellist    {c -(}
+{txt}  2{com}.         tempvar temp
+{txt}  3{com}.         by cityid: ipolate `rel' year, epolate gen(`temp')
+{txt}  4{com}.         clonevar `rel'_O = `rel'
+{txt}  5{com}.         replace `rel' = `temp'
+{txt}  6{com}. {c )-}
+{txt}(54 missing values generated)
+R_bap was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_cal was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_cat was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_jud was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_lut was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_oth was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_pro was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+
+{com}. 
+. save "`datdir/RPAUG_li'"
+{err}{p 0 4}
+file ../Data.dta
+already exists
+{p_end}
+{txt}{search r(602):r(602);}
+{search r(602):r(602);}
+
+end of do-file
+{search r(602):r(602);}
+
+end of do-file
+
+{search r(602):r(602);}
+
+{com}. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]imputation.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file imputes missing values by
+> 1) linear intrapolation
+> 2) multiple imputation
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "1]imputation.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:31:47
+{txt}
+{com}. 
+. use "/Users/matthijsdezwaan/workdir/steden/Data/ADZ.dta"
+{txt}(Apeldoorn, Deventer and Zwolle; 1851-1914)
+
+{com}. keep if tin(1851, 1910)
+{txt}(12 observations deleted)
+
+{com}. save "`datdir'/RPAUG.dta", replace
+{txt}file ../Data/RPAUG.dta saved
+
+{com}. describe, short
+
+{txt}Contains data from {res}../Data/RPAUG.dta
+{txt}  obs:{res}           180                          Apeldoorn, Deventer and Zwolle; 1851-1914
+{txt} vars:{res}           259                          15 Mar 2011 15:31
+{txt} size:{res}       148,680{txt} (99.7% of memory free)
+Sorted by:  {res}cityid  year
+{txt}
+{com}. tsreport, report0 panel list
+
+{txt}Number of gaps in sample:  {res}0
+{txt}
+{com}. xtdescribe
+
+  {txt}cityid:  {res}1{txt}, {res}2{txt}, ..., {res}3                                      {txt}n ={res}          3
+    {txt}year:  {res}1851, 1852, ..., 1910                             {txt}T ={res}         60
+           {txt}Delta(year) = {res}1 year
+           {txt}Span(year)  = {res}60 periods
+           {txt}(cityid*year uniquely identifies each observation)
+
+Distribution of T_i:   min      5%     25%       50%       75%     95%     max
+                    {res}    60      60      60        60        60      60      60
+
+{txt}{col 6}Freq.  Percent    Cum. {c |}  Pattern
+ {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00  100.00{txt} {c |}  {res}111111111111111111111111111111111111111111111111111111111111
+{txt} {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00        {txt} {c |}  {res}XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+{txt}
+{com}. misstable summarize
+{txt}{col 64}Obs<.
+{col 49}{c TLC}{hline 30}
+{col 16}{c |}{col 49}{c |} Unique
+{col 7}Variable {c |}{col 22}Obs=.{col 32}Obs>.{col 42}Obs<.{col 49}{c |} values{col 65}Min{col 77}Max
+  {hline 13}{c +}{hline 32}{c +}{hline 30}
+           GDP {c |}{res}         5{txt}{space 10}{res}       175{txt}  {c |}     63      219.1       388.6
+           H_R {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126   .9130484    1.520354
+         R_bap {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    105          2         371
+         R_cal {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    117        147        3912
+         R_cat {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    125       1603        7989
+         R_jud {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    112         17         772
+         R_lut {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    113         59         663
+         R_oth {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}     75          0         433
+         R_pro {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126       9484       25709
+          S_DD {c |}{res}       120{txt}{space 10}{res}        60{txt}  {c |}      3          2           4
+    population {c |}{res}        10{txt}{space 10}{res}       170{txt}  {c |}    170      10269       36507
+  {hline 13}{c BT}{hline 32}{c BT}{hline 30}
+
+{com}. misstable patterns
+{res}
+                {txt}Missing-value patterns
+                  (1 means complete)
+
+{res}{txt}{space 2}            {c |}   Pattern
+{space 2}  Percent   {c |}  1  2  3  4    5  6  7  8    9 10 11
+{space 2}{hline 12}{c +}{hline 38}
+{space 2} {res:    26}%    {c |}  1  1  1  1    1  1  1  1    1  1  1
+{space 2}{space 12}{c |}
+{space 2} {res:    39}     {c |}  1  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:    19}     {c |}  1  1  0  0    0  0  0  0    0  0  0
+{space 2} {res:     8}     {c |}  1  1  0  0    0  0  0  0    0  0  1
+{space 2} {res:     3}     {c |}  0  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:     3}     {c |}  1  0  0  0    0  0  0  0    0  0  0
+{space 2} {res:     3}     {c |}  1  0  1  1    1  1  1  1    1  1  0
+{space 2}{hline 12}{c +}{hline 38}
+{space 2}    {res:100}%    {c |}
+
+{p 2 16 2}
+Variables are
+{bind: (1) {res:GDP}}
+{bind: (2) {res:population}}
+{bind: (3) {res:H_R}}
+{bind: (4) {res:R_bap}}
+{bind: (5) {res:R_cal}}
+{bind: (6) {res:R_cat}}
+{bind: (7) {res:R_jud}}
+{bind: (8) {res:R_lut}}
+{bind: (9) {res:R_oth}}
+{bind: (10) {res:R_pro}}
+{bind: (11) {res:S_DD}}
+{p_end}
+
+{com}. 
+. /* 1) Imputation by linear intra- (extra-) polation */
+. preserve
+{txt}
+{com}. include "1a]linimp.do"
+{txt}
+{com}. d R_???, varlist
+
+              {txt}storage  display     value
+variable name   type   format      label      variable label
+{hline}
+{p 0 48}{res}{bind:R_bap          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: baptist{p_end}
+{p 0 48}{bind:R_cal          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: orthodox calvinist{p_end}
+{p 0 48}{bind:R_cat          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: catholic{p_end}
+{p 0 48}{bind:R_jud          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: judaist{p_end}
+{p 0 48}{bind:R_lut          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: lutheran{p_end}
+{p 0 48}{bind:R_oth          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: other (excluding not){p_end}
+{p 0 48}{bind:R_pro          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: liberal protestant{p_end}
+{txt}
+{com}. local rellist `r(varlist)'
+{txt}
+{com}. macro list _rellist
+{txt}{p 0 16}
+_rellist:{space 7}{res}{res}R_bap R_cal R_cat R_jud R_lut R_oth R_pro
+{p_end}
+{txt}
+{com}. foreach rel of local rellist    {c -(}
+{txt}  2{com}.         tempvar temp
+{txt}  3{com}.         by cityid: ipolate `rel' year, epolate gen(`temp')
+{txt}  4{com}.         clonevar `rel'_O = `rel'
+{txt}  5{com}.         replace `rel' = `temp'
+{txt}  6{com}. {c )-}
+{txt}(54 missing values generated)
+R_bap was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_cal was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_cat was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_jud was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_lut was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_oth was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_pro was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+
+{com}. 
+. save "`datdir/RPAUG_li'", replace
+{txt}file ../Data.dta saved
+
+{com}. {txt}
+{com}. restore
+{txt}
+{com}. 
+. /* 2) Imputation by multiple imputation */
+. preserve
+{txt}
+{com}. *include "1b]multimp.do"
+. restore
+{txt}
+{com}. 
+. log close
+      {txt}name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res}15 Mar 2011, 15:31:47
+{txt}{.-}
+
+{com}. exit
+
+{txt}end of do-file
+
+{com}. /* Do imputations */
+. do "2]createvars.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file uses the two imputed data files to 
+> create the variables needed for the analysis.
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "2]createvars.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/2]createvars.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:31:47
+{txt}
+{com}. 
+. /* Linear imputation */
+. 
+. use "`datdir'/RPAUG_li.dta"
+{err}{p 0 4}
+file ../Data/RPAUG_li.dta
+not found
+{p_end}
+{txt}{search r(601):r(601);}
+
+end of do-file
+{search r(601):r(601);}
+
+end of do-file
+
+{search r(601):r(601);}
+
+{com}. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]imputation.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file imputes missing values by
+> 1) linear intrapolation
+> 2) multiple imputation
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "1]imputation.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:33:33
+{txt}
+{com}. 
+. use "/Users/matthijsdezwaan/workdir/steden/Data/ADZ.dta"
+{txt}(Apeldoorn, Deventer and Zwolle; 1851-1914)
+
+{com}. keep if tin(1851, 1910)
+{txt}(12 observations deleted)
+
+{com}. save "`datdir'/RPAUG.dta", replace
+{txt}file ../Data/RPAUG.dta saved
+
+{com}. describe, short
+
+{txt}Contains data from {res}../Data/RPAUG.dta
+{txt}  obs:{res}           180                          Apeldoorn, Deventer and Zwolle; 1851-1914
+{txt} vars:{res}           259                          15 Mar 2011 15:33
+{txt} size:{res}       148,680{txt} (99.7% of memory free)
+Sorted by:  {res}cityid  year
+{txt}
+{com}. tsreport, report0 panel list
+
+{txt}Number of gaps in sample:  {res}0
+{txt}
+{com}. xtdescribe
+
+  {txt}cityid:  {res}1{txt}, {res}2{txt}, ..., {res}3                                      {txt}n ={res}          3
+    {txt}year:  {res}1851, 1852, ..., 1910                             {txt}T ={res}         60
+           {txt}Delta(year) = {res}1 year
+           {txt}Span(year)  = {res}60 periods
+           {txt}(cityid*year uniquely identifies each observation)
+
+Distribution of T_i:   min      5%     25%       50%       75%     95%     max
+                    {res}    60      60      60        60        60      60      60
+
+{txt}{col 6}Freq.  Percent    Cum. {c |}  Pattern
+ {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00  100.00{txt} {c |}  {res}111111111111111111111111111111111111111111111111111111111111
+{txt} {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00        {txt} {c |}  {res}XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+{txt}
+{com}. misstable summarize
+{txt}{col 64}Obs<.
+{col 49}{c TLC}{hline 30}
+{col 16}{c |}{col 49}{c |} Unique
+{col 7}Variable {c |}{col 22}Obs=.{col 32}Obs>.{col 42}Obs<.{col 49}{c |} values{col 65}Min{col 77}Max
+  {hline 13}{c +}{hline 32}{c +}{hline 30}
+           GDP {c |}{res}         5{txt}{space 10}{res}       175{txt}  {c |}     63      219.1       388.6
+           H_R {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126   .9130484    1.520354
+         R_bap {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    105          2         371
+         R_cal {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    117        147        3912
+         R_cat {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    125       1603        7989
+         R_jud {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    112         17         772
+         R_lut {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    113         59         663
+         R_oth {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}     75          0         433
+         R_pro {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126       9484       25709
+          S_DD {c |}{res}       120{txt}{space 10}{res}        60{txt}  {c |}      3          2           4
+    population {c |}{res}        10{txt}{space 10}{res}       170{txt}  {c |}    170      10269       36507
+  {hline 13}{c BT}{hline 32}{c BT}{hline 30}
+
+{com}. misstable patterns
+{res}
+                {txt}Missing-value patterns
+                  (1 means complete)
+
+{res}{txt}{space 2}            {c |}   Pattern
+{space 2}  Percent   {c |}  1  2  3  4    5  6  7  8    9 10 11
+{space 2}{hline 12}{c +}{hline 38}
+{space 2} {res:    26}%    {c |}  1  1  1  1    1  1  1  1    1  1  1
+{space 2}{space 12}{c |}
+{space 2} {res:    39}     {c |}  1  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:    19}     {c |}  1  1  0  0    0  0  0  0    0  0  0
+{space 2} {res:     8}     {c |}  1  1  0  0    0  0  0  0    0  0  1
+{space 2} {res:     3}     {c |}  0  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:     3}     {c |}  1  0  0  0    0  0  0  0    0  0  0
+{space 2} {res:     3}     {c |}  1  0  1  1    1  1  1  1    1  1  0
+{space 2}{hline 12}{c +}{hline 38}
+{space 2}    {res:100}%    {c |}
+
+{p 2 16 2}
+Variables are
+{bind: (1) {res:GDP}}
+{bind: (2) {res:population}}
+{bind: (3) {res:H_R}}
+{bind: (4) {res:R_bap}}
+{bind: (5) {res:R_cal}}
+{bind: (6) {res:R_cat}}
+{bind: (7) {res:R_jud}}
+{bind: (8) {res:R_lut}}
+{bind: (9) {res:R_oth}}
+{bind: (10) {res:R_pro}}
+{bind: (11) {res:S_DD}}
+{p_end}
+
+{com}. 
+. /* 1) Imputation by linear intra- (extra-) polation */
+. preserve
+{txt}
+{com}. include "1a]linimp.do"
+{txt}
+{com}. d R_???, varlist
+
+              {txt}storage  display     value
+variable name   type   format      label      variable label
+{hline}
+{p 0 48}{res}{bind:R_bap          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: baptist{p_end}
+{p 0 48}{bind:R_cal          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: orthodox calvinist{p_end}
+{p 0 48}{bind:R_cat          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: catholic{p_end}
+{p 0 48}{bind:R_jud          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: judaist{p_end}
+{p 0 48}{bind:R_lut          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: lutheran{p_end}
+{p 0 48}{bind:R_oth          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: other (excluding not){p_end}
+{p 0 48}{bind:R_pro          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: liberal protestant{p_end}
+{txt}
+{com}. local rellist `r(varlist)'
+{txt}
+{com}. macro list _rellist
+{txt}{p 0 16}
+_rellist:{space 7}{res}{res}R_bap R_cal R_cat R_jud R_lut R_oth R_pro
+{p_end}
+{txt}
+{com}. foreach rel of local rellist    {c -(}
+{txt}  2{com}.         tempvar temp
+{txt}  3{com}.         by cityid: ipolate `rel' year, epolate gen(`temp')
+{txt}  4{com}.         clonevar `rel'_O = `rel'
+{txt}  5{com}.         replace `rel' = `temp'
+{txt}  6{com}. {c )-}
+{txt}(54 missing values generated)
+R_bap was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_cal was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_cat was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_jud was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_lut was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_oth was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_pro was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+
+{com}. 
+. save "`datdir'/RPAUG_li", replace
+{txt}(note: file ../Data/RPAUG_li.dta not found)
+file ../Data/RPAUG_li.dta saved
+
+{com}. {txt}
+{com}. restore
+{txt}
+{com}. 
+. /* 2) Imputation by multiple imputation */
+. preserve
+{txt}
+{com}. *include "1b]multimp.do"
+. restore
+{txt}
+{com}. 
+. log close
+      {txt}name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res}15 Mar 2011, 15:33:33
+{txt}{.-}
+
+{com}. exit
+
+{txt}end of do-file
+
+{com}. /* Do imputations */
+. do "2]createvars.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file uses the two imputed data files to 
+> create the variables needed for the analysis.
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "2]createvars.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/2]createvars.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:33:33
+{txt}
+{com}. 
+. /* Linear imputation */
+. 
+. use "`datdir'/RPAUG_li.dta"
+{txt}(Apeldoorn, Deventer and Zwolle; 1851-1914)
+
+{com}. xtset cityid year, yearly delta(1)
+{res}{err}__000001 already defined
+{txt}{search r(110):r(110);}
+
+end of do-file
+{search r(110):r(110);}
+
+end of do-file
+
+{search r(110):r(110);}
+
+{com}. do "/var/folders/lW/lWISsZ3yH6aCQ8DdUdYeOU+++TI/-Tmp-//SD03079.000000"
+{txt}
+{com}. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. set more off
+{txt}
+{com}. set varabbrev off
+{txt}
+{com}. cap log close
+{txt}
+{com}. 
+. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. 
+. /*****************
+> General do-file
+>         - Runs all separate do files
+> *****************/
+. 
+. /* Create necessary variables */
+. do "1]imputation.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file imputes missing values by
+> 1) linear intrapolation
+> 2) multiple imputation
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "1]imputation.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:34:05
+{txt}
+{com}. 
+. use "/Users/matthijsdezwaan/workdir/steden/Data/ADZ.dta"
+{txt}(Apeldoorn, Deventer and Zwolle; 1851-1914)
+
+{com}. keep if tin(1851, 1910)
+{txt}(12 observations deleted)
+
+{com}. save "`datdir'/RPAUG.dta", replace
+{txt}file ../Data/RPAUG.dta saved
+
+{com}. describe, short
+
+{txt}Contains data from {res}../Data/RPAUG.dta
+{txt}  obs:{res}           180                          Apeldoorn, Deventer and Zwolle; 1851-1914
+{txt} vars:{res}           259                          15 Mar 2011 15:34
+{txt} size:{res}       148,680{txt} (99.7% of memory free)
+Sorted by:  {res}cityid  year
+{txt}
+{com}. tsreport, report0 panel list
+
+{txt}Number of gaps in sample:  {res}0
+{txt}
+{com}. xtdescribe
+
+  {txt}cityid:  {res}1{txt}, {res}2{txt}, ..., {res}3                                      {txt}n ={res}          3
+    {txt}year:  {res}1851, 1852, ..., 1910                             {txt}T ={res}         60
+           {txt}Delta(year) = {res}1 year
+           {txt}Span(year)  = {res}60 periods
+           {txt}(cityid*year uniquely identifies each observation)
+
+Distribution of T_i:   min      5%     25%       50%       75%     95%     max
+                    {res}    60      60      60        60        60      60      60
+
+{txt}{col 6}Freq.  Percent    Cum. {c |}  Pattern
+ {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00  100.00{txt} {c |}  {res}111111111111111111111111111111111111111111111111111111111111
+{txt} {hline 27}{c +}{c -}{c -}{hline 60}
+{res}        3    100.00        {txt} {c |}  {res}XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+{txt}
+{com}. misstable summarize
+{txt}{col 64}Obs<.
+{col 49}{c TLC}{hline 30}
+{col 16}{c |}{col 49}{c |} Unique
+{col 7}Variable {c |}{col 22}Obs=.{col 32}Obs>.{col 42}Obs<.{col 49}{c |} values{col 65}Min{col 77}Max
+  {hline 13}{c +}{hline 32}{c +}{hline 30}
+           GDP {c |}{res}         5{txt}{space 10}{res}       175{txt}  {c |}     63      219.1       388.6
+           H_R {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126   .9130484    1.520354
+         R_bap {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    105          2         371
+         R_cal {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    117        147        3912
+         R_cat {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    125       1603        7989
+         R_jud {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    112         17         772
+         R_lut {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    113         59         663
+         R_oth {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}     75          0         433
+         R_pro {c |}{res}        54{txt}{space 10}{res}       126{txt}  {c |}    126       9484       25709
+          S_DD {c |}{res}       120{txt}{space 10}{res}        60{txt}  {c |}      3          2           4
+    population {c |}{res}        10{txt}{space 10}{res}       170{txt}  {c |}    170      10269       36507
+  {hline 13}{c BT}{hline 32}{c BT}{hline 30}
+
+{com}. misstable patterns
+{res}
+                {txt}Missing-value patterns
+                  (1 means complete)
+
+{res}{txt}{space 2}            {c |}   Pattern
+{space 2}  Percent   {c |}  1  2  3  4    5  6  7  8    9 10 11
+{space 2}{hline 12}{c +}{hline 38}
+{space 2} {res:    26}%    {c |}  1  1  1  1    1  1  1  1    1  1  1
+{space 2}{space 12}{c |}
+{space 2} {res:    39}     {c |}  1  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:    19}     {c |}  1  1  0  0    0  0  0  0    0  0  0
+{space 2} {res:     8}     {c |}  1  1  0  0    0  0  0  0    0  0  1
+{space 2} {res:     3}     {c |}  0  1  1  1    1  1  1  1    1  1  0
+{space 2} {res:     3}     {c |}  1  0  0  0    0  0  0  0    0  0  0
+{space 2} {res:     3}     {c |}  1  0  1  1    1  1  1  1    1  1  0
+{space 2}{hline 12}{c +}{hline 38}
+{space 2}    {res:100}%    {c |}
+
+{p 2 16 2}
+Variables are
+{bind: (1) {res:GDP}}
+{bind: (2) {res:population}}
+{bind: (3) {res:H_R}}
+{bind: (4) {res:R_bap}}
+{bind: (5) {res:R_cal}}
+{bind: (6) {res:R_cat}}
+{bind: (7) {res:R_jud}}
+{bind: (8) {res:R_lut}}
+{bind: (9) {res:R_oth}}
+{bind: (10) {res:R_pro}}
+{bind: (11) {res:S_DD}}
+{p_end}
+
+{com}. 
+. /* 1) Imputation by linear intra- (extra-) polation */
+. preserve
+{txt}
+{com}. include "1a]linimp.do"
+{txt}
+{com}. d R_???, varlist
+
+              {txt}storage  display     value
+variable name   type   format      label      variable label
+{hline}
+{p 0 48}{res}{bind:R_bap          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: baptist{p_end}
+{p 0 48}{bind:R_cal          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: orthodox calvinist{p_end}
+{p 0 48}{bind:R_cat          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: catholic{p_end}
+{p 0 48}{bind:R_jud          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: judaist{p_end}
+{p 0 48}{bind:R_lut          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: lutheran{p_end}
+{p 0 48}{bind:R_oth          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: other (excluding not){p_end}
+{p 0 48}{bind:R_pro          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Religion: liberal protestant{p_end}
+{txt}
+{com}. local rellist `r(varlist)'
+{txt}
+{com}. macro list _rellist
+{txt}{p 0 16}
+_rellist:{space 7}{res}{res}R_bap R_cal R_cat R_jud R_lut R_oth R_pro
+{p_end}
+{txt}
+{com}. foreach rel of local rellist    {c -(}
+{txt}  2{com}.         tempvar temp
+{txt}  3{com}.         by cityid: ipolate `rel' year, epolate gen(`temp')
+{txt}  4{com}.         clonevar `rel'_O = `rel'
+{txt}  5{com}.         replace `rel' = `temp'
+{txt}  6{com}. {c )-}
+{txt}(54 missing values generated)
+R_bap was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_cal was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_cat was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_jud was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_lut was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_oth was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+(54 missing values generated)
+R_pro was {res}int{txt} now {res}float
+{txt}(54 real changes made)
+
+{com}. 
+. save "`datdir'/RPAUG_li", replace
+{txt}file ../Data/RPAUG_li.dta saved
+
+{com}. {txt}
+{com}. restore
+{txt}
+{com}. 
+. /* 2) Imputation by multiple imputation */
+. preserve
+{txt}
+{com}. *include "1b]multimp.do"
+. restore
+{txt}
+{com}. 
+. log close
+      {txt}name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/1]imputation.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res}15 Mar 2011, 15:34:05
+{txt}{.-}
+
+{com}. exit
+
+{txt}end of do-file
+
+{com}. /* Do imputations */
+. do "2]createvars.do"
+{txt}
+{com}. /*********
+> Project: Religious pluralism and urban growth
+> Author: Matthijs de Zwaan
+> 
+> This file uses the two imputed data files to 
+> create the variables needed for the analysis.
+> *********/
+. version 11.1
+{txt}
+{com}. clear all
+{txt}
+{com}. cd "/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis"
+{res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/
+{txt}
+{com}. local datdir "../Data"
+{txt}
+{com}. cap log close
+{txt}
+{com}. log using "2]createvars.smcl", replace
+{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/steden/Religious pluralism and urban growth/Analysis/2]createvars.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Mar 2011, 15:34:05
+{txt}
+{com}. 
+. /* Linear imputation */
+. 
+. use "`datdir'/RPAUG_li.dta"
+{txt}(Apeldoorn, Deventer and Zwolle; 1851-1914)
+
+{com}. xtset
+{res}{err}__000002 already defined
+{txt}{search r(110):r(110);}
+
+end of do-file
+{search r(110):r(110);}
+
+end of do-file
+
+{search r(110):r(110);}
+
+{com}. exit, clear

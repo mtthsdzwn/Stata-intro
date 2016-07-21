@@ -1,0 +1,15 @@
+\frametitle {The structure of Stata commands}
+A Stata command generally looks like:
+
+\begin{Verbatim}
+[(optional by, xi, etc)[, options]:]
+command (and what to do the command on)
+[restrictions: if, in]
+[, options]
+\end{Verbatim}
+Example:
+\begin{verbatim}
+by firm, sort: reg wage educ tenure if male==0, vce(robust)
+\end{verbatim}
+
+$\Rightarrow$ \alert{Most commands (and variables) can be abbreviated:}\\handy but dangerous! Use \texttt{set varabbrev off}.

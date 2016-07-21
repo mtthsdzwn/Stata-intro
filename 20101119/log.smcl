@@ -1,0 +1,242 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}log1
+       {txt}log:  {res}/Users/matthijsdezwaan/workdir/Stata intro/20101119/log.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}19 Nov 2010, 12:47:23
+{txt}
+{com}. 
+. * Load your data.
+. use example.dta, clear
+{txt}
+{com}. use "~/workdir/Stata intro/20101119/example.dta", clear
+{txt}
+{com}. /* 
+> Stata can also read csv files and other formats using the insheet command. 
+> You can export Excel data sheets into csv, then read those with Stata. See 
+> help insheet and help infile for more info.
+> Stata can also export using outsheet.
+> */
+. outsheet using example.csv, replace comma
+{txt}
+{com}. insheet using example.csv, names clear
+{txt}(4 vars, 500 obs)
+
+{com}. * We are going to use a small data set that ships with Stata
+. sysuse auto, clear
+{txt}(1978 Automobile Data)
+
+{com}. * Have a look at the data
+. inspect
+
+{res}make:  Make and Model                           {txt}Number of Observations
+{hline 21}                       {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}                            Negative           {res}-         -          -
+{txt}{c |}                            Zero               {res}-         -          -
+{txt}{c |}                            Positive           {res}-         -          -
+{txt}{c |}                                           {hline 5}     {hline 5}      {hline 5}
+{c |}                            Total              {res}-         -          -
+{txt}{c |}                            Missing        {res}   74
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}.             -9.0e+307                        74
+   (0 unique value)
+
+price:  Price                                   {txt}Number of Observations
+{hline 13}                               {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}  {res}#                         {txt}Negative           {res}-         -          -
+{txt}{c |}  {res}#                         {txt}Zero               {res}-         -          -
+{txt}{c |}  {res}#                         {txt}Positive       {res}   74        74          -
+{txt}{c |}  {res}#                                        {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#                         {txt}Total          {res}   74        74          -
+{txt}{c |}  {res}#   #   .   .   .         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}3291              15906                        74
+  (74 unique values)
+
+mpg:  Mileage (mpg)                             {txt}Number of Observations
+{hline 19}                         {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}      {res}#                     {txt}Negative           {res}-         -          -
+{txt}{c |}      {res}#                     {txt}Zero               {res}-         -          -
+{txt}{c |}      {res}#                     {txt}Positive       {res}   74        74          -
+{txt}{c |}  {res}#   #                                    {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #   #                 {txt}Total          {res}   74        74          -
+{txt}{c |}  {res}#   #   #   #   .         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}12                   41                        74
+  (21 unique values)
+
+rep78:  Repair Record 1978                      {txt}Number of Observations
+{hline 26}                  {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}          {res}#                 {txt}Negative           {res}-         -          -
+{txt}{c |}          {res}#                 {txt}Zero               {res}-         -          -
+{txt}{c |}          {res}#                 {txt}Positive       {res}   69        69          -
+{txt}{c |}          {res}#   #                            {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}          {res}#   #   #         {txt}Total          {res}   69        69          -
+{txt}{c |}  {res}.   #   #   #   #         {txt}Missing        {res}    5
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}1                     5                        74
+   (5 unique values)
+
+headroom:  Headroom (in.)                       {txt}Number of Observations
+{hline 25}                   {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}          {res}#                 {txt}Negative           {res}-         -          -
+{txt}{c |}          {res}#                 {txt}Zero               {res}-         -          -
+{txt}{c |}          {res}#                 {txt}Positive       {res}   74        37         37
+{txt}{c |}  {res}#   #   #                                {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #   #   #             {txt}Total          {res}   74        37         37
+{txt}{c |}  {res}#   #   #   #   #         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}1.5                   5                        74
+   (8 unique values)
+
+trunk:  Trunk space (cu. ft.)                   {txt}Number of Observations
+{hline 29}               {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}              {res}#             {txt}Negative           {res}-         -          -
+{txt}{c |}      {res}#       #             {txt}Zero               {res}-         -          -
+{txt}{c |}      {res}#       #             {txt}Positive       {res}   74        74          -
+{txt}{c |}      {res}#   #   #                            {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #   #   #   #         {txt}Total          {res}   74        74          -
+{txt}{c |}  {res}#   #   #   #   #         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}5                    23                        74
+  (18 unique values)
+
+weight:  Weight (lbs.)                          {txt}Number of Observations
+{hline 22}                      {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}  {res}#       #                 {txt}Negative           {res}-         -          -
+{txt}{c |}  {res}#       #                 {txt}Zero               {res}-         -          -
+{txt}{c |}  {res}#   #   #   #             {txt}Positive       {res}   74        74          -
+{txt}{c |}  {res}#   #   #   #                            {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #   #   #             {txt}Total          {res}   74        74          -
+{txt}{c |}  {res}#   #   #   #   #         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}1760               4840                        74
+  (64 unique values)
+
+length:  Length (in.)                           {txt}Number of Observations
+{hline 21}                       {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}              {res}#             {txt}Negative           {res}-         -          -
+{txt}{c |}      {res}#       #             {txt}Zero               {res}-         -          -
+{txt}{c |}      {res}#       #             {txt}Positive       {res}   74        74          -
+{txt}{c |}      {res}#   #   #                            {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #   #   #   #         {txt}Total          {res}   74        74          -
+{txt}{c |}  {res}#   #   #   #   #         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}142                 233                        74
+  (47 unique values)
+
+turn:  Turn Circle (ft.)                        {txt}Number of Observations
+{hline 25}                   {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}      {res}#                     {txt}Negative           {res}-         -          -
+{txt}{c |}      {res}#       #             {txt}Zero               {res}-         -          -
+{txt}{c |}      {res}#   #   #             {txt}Positive       {res}   74        74          -
+{txt}{c |}      {res}#   #   #                            {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #   #   #             {txt}Total          {res}   74        74          -
+{txt}{c |}  {res}#   #   #   #   .         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}31                   51                        74
+  (18 unique values)
+
+displacement:  Displacement (cu. in.)           {txt}Number of Observations
+{hline 37}       {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}  {res}#                         {txt}Negative           {res}-         -          -
+{txt}{c |}  {res}#                         {txt}Zero               {res}-         -          -
+{txt}{c |}  {res}#                         {txt}Positive       {res}   74        74          -
+{txt}{c |}  {res}#       #                                {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #   #   #             {txt}Total          {res}   74        74          -
+{txt}{c |}  {res}#   #   #   #   .         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}79                  425                        74
+  (31 unique values)
+
+gear_ratio:  Gear Ratio                         {txt}Number of Observations
+{hline 23}                     {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}          {res}#                 {txt}Negative           {res}-         -          -
+{txt}{c |}          {res}#                 {txt}Zero               {res}-         -          -
+{txt}{c |}          {res}#                 {txt}Positive       {res}   74         -         74
+{txt}{c |}  {res}#   #   #       #                        {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #   #       #         {txt}Total          {res}   74         -         74
+{txt}{c |}  {res}#   #   #   #   #         {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}2.19               3.89                        74
+  (36 unique values)
+
+foreign:  Car type                              {txt}Number of Observations
+{hline 18}                          {hline 30}
+                                            Total   Integers   Nonintegers
+{c |}  {res}#                         {txt}Negative           {res}-         -          -
+{txt}{c |}  {res}#                         {txt}Zero           {res}   52        52          -
+{txt}{c |}  {res}#                         {txt}Positive       {res}   22        22          -
+{txt}{c |}  {res}#                                        {txt}{hline 5}     {hline 5}      {hline 5}
+{c |}  {res}#   #                     {txt}Total          {res}   74        74          -
+{txt}{c |}  {res}#   #                     {txt}Missing            {res}-
+{txt}{c +}{hline 22}{col 45}{hline 5}
+{res}0                     1                        74
+   (2 unique values)
+
+      {txt}foreign is labeled and all values are documented in the label.
+
+{com}. describe
+
+{txt}Contains data from {res}/Applications/Stata11/ado/base/a/auto.dta
+{txt}  obs:{res}            74                          1978 Automobile Data
+{txt} vars:{res}            12                          13 Apr 2009 17:45
+{txt} size:{res}         3,478{txt} (99.9% of memory free)   (_dta has notes)
+{hline}
+              storage  display     value
+variable name   type   format      label      variable label
+{hline}
+{p 0 48}{res}{bind:make           }{txt}{bind: str18  }{bind:{txt}%-18s      }{space 1}{bind:         }{bind:  }{res}{res}Make and Model{p_end}
+{p 0 48}{bind:price          }{txt}{bind: int    }{bind:{txt}%8.0gc     }{space 1}{bind:         }{bind:  }{res}{res}Price{p_end}
+{p 0 48}{bind:mpg            }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Mileage (mpg){p_end}
+{p 0 48}{bind:rep78          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Repair Record 1978{p_end}
+{p 0 48}{bind:headroom       }{txt}{bind: float  }{bind:{txt}%6.1f      }{space 1}{bind:         }{bind:  }{res}{res}Headroom (in.){p_end}
+{p 0 48}{bind:trunk          }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Trunk space (cu. ft.){p_end}
+{p 0 48}{bind:weight         }{txt}{bind: int    }{bind:{txt}%8.0gc     }{space 1}{bind:         }{bind:  }{res}{res}Weight (lbs.){p_end}
+{p 0 48}{bind:length         }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Length (in.){p_end}
+{p 0 48}{bind:turn           }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Turn Circle (ft.) {p_end}
+{p 0 48}{bind:displacement   }{txt}{bind: int    }{bind:{txt}%8.0g      }{space 1}{bind:         }{bind:  }{res}{res}Displacement (cu. in.){p_end}
+{p 0 48}{bind:gear_ratio     }{txt}{bind: float  }{bind:{txt}%6.2f      }{space 1}{bind:         }{bind:  }{res}{res}Gear Ratio{p_end}
+{p 0 48}{bind:foreign        }{txt}{bind: byte   }{bind:{txt}%8.0g      }{space 1}{bind:origin   }{bind:  }{res}{res}Car type{p_end}
+{txt}{hline}
+Sorted by:  {res}foreign
+{txt}
+{com}. summarize
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 8}make {c |}{res}         0
+{txt}{space 7}price {c |}{res}        74    6165.257    2949.496       3291      15906
+{txt}{space 9}mpg {c |}{res}        74     21.2973    5.785503         12         41
+{txt}{space 7}rep78 {c |}{res}        69    3.405797    .9899323          1          5
+{txt}{space 4}headroom {c |}{res}        74    2.993243    .8459948        1.5          5
+{txt}{hline 13}{c +}{hline 56}
+{space 7}trunk {c |}{res}        74    13.75676    4.277404          5         23
+{txt}{space 6}weight {c |}{res}        74    3019.459    777.1936       1760       4840
+{txt}{space 6}length {c |}{res}        74    187.9324    22.26634        142        233
+{txt}{space 8}turn {c |}{res}        74    39.64865    4.399354         31         51
+{txt}displacement {c |}{res}        74    197.2973    91.83722         79        425
+{txt}{hline 13}{c +}{hline 56}
+{space 2}gear_ratio {c |}{res}        74    3.014865    .4562871       2.19       3.89
+{txt}{space 5}foreign {c |}{res}        74    .2972973    .4601885          0          1
+{txt}
+{com}. list price if rep78 ~= 0 | if rep78 == 1
+{err}if not found
+{txt}{search r(111):r(111);}
+
+end of do-file
+
+{search r(111):r(111);}
+
+{com}. exit, clear

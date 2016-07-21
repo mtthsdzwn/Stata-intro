@@ -1,0 +1,13 @@
+\frametitle {\texttt{foreach}, \texttt{forval} and \texttt{while}}
+\begin{itemize}
+\item \texttt{foreach\{\}}, \texttt{forval\{\}} and \texttt{while\{\}} allow you to repeat manipulations easily.
+\item useful for data manipulation or doing the same analyses over different subsets of your data.
+\item For example, \\
+\begin{Verbatim}
+foreach i in 0 1 {
+summarize wage if gender == `i'
+}
+\end{Verbatim}
+summarizes the ``wage'' variable for men and women (presumably)
+\item take care of the syntax; see the help files!
+\end{itemize}
